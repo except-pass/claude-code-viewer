@@ -1,20 +1,32 @@
-import { zValidator } from "@hono/zod-validator";
-import { z } from "zod";
 import type { HonoAppType } from "./app";
-
-const helloBodySchema = z.object({
-  name: z.string(),
-});
+import { getProjects } from "../service/project/getProjects";
+import { getProject } from "../service/project/getProject";
+import { getSessions } from "../service/session/getSessions";
+import { getSession } from "../service/session/getSession";
 
 export const routes = (app: HonoAppType) => {
-  return (
-    app
-      // routes
-      .get("/hello", zValidator("json", helloBodySchema), (c) => {
-        const { name } = c.req.valid("json");
-        return c.json({ message: `Hello ${name}` });
-      })
-  );
+  return app
+    .get("/projects", async (c) => {
+      const { projects } = await getProjects();
+      return c.json({ projects });
+    })
+
+    .get("/projects/:projectId", async (c) => {
+      const { projectId } = c.req.param();
+
+      const [{ project }, { sessions }] = await Promise.all([
+        getProject(projectId),
+        getSessions(projectId),
+      ] as const);
+
+      return c.json({ project, sessions });
+    })
+
+    .get("/projects/:projectId/sessions/:sessionId", async (c) => {
+      const { projectId, sessionId } = c.req.param();
+      const { session } = await getSession(projectId, sessionId);
+      return c.json({ session });
+    });
 };
 
 export type RouteType = ReturnType<typeof routes>;
