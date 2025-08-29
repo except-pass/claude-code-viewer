@@ -1,7 +1,6 @@
+import { redirect } from "next/navigation";
+import { pagesPath } from "../lib/$path";
+
 export default function Home() {
-  return (
-    <div>
-      <h1>Empty App</h1>
-    </div>
-  );
+  redirect(pagesPath.projects.$url().pathname);
 }

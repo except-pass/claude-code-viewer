@@ -1,5 +1,5 @@
 import { readdir } from "node:fs/promises";
-import { resolve } from "node:path";
+import { basename, extname, resolve } from "node:path";
 
 import { decodeProjectId } from "../project/id";
 import type { Session } from "../types";
@@ -18,7 +18,7 @@ export const getSessions = async (
         const fullPath = resolve(d.parentPath, d.name);
 
         return {
-          id: d.name,
+          id: basename(fullPath, extname(fullPath)),
           jsonlFilePath: fullPath,
           meta: await getSessionMeta(fullPath),
         };

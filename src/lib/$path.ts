@@ -26,6 +26,17 @@ const buildSuffix = (url?: {
 };
 
 export const pagesPath = {
+  'projects': {
+    _projectId: (projectId: string | number) => ({
+      'sessions': {
+        _sessionId: (sessionId: string | number) => ({
+          $url: (url?: { hash?: string }) => ({ pathname: '/projects/[projectId]/sessions/[sessionId]' as const, query: { projectId, sessionId }, hash: url?.hash, path: `/projects/${projectId}/sessions/${sessionId}${buildSuffix(url)}` })
+        })
+      },
+      $url: (url?: { hash?: string }) => ({ pathname: '/projects/[projectId]' as const, query: { projectId }, hash: url?.hash, path: `/projects/${projectId}${buildSuffix(url)}` })
+    }),
+    $url: (url?: { hash?: string }) => ({ pathname: '/projects' as const, hash: url?.hash, path: `/projects${buildSuffix(url)}` })
+  },
   $url: (url?: { hash?: string }) => ({ pathname: '/' as const, hash: url?.hash, path: `/${buildSuffix(url)}` })
 };
 

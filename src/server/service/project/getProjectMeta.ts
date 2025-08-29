@@ -1,6 +1,6 @@
 import { statSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
+import { basename, dirname, resolve } from "node:path";
 
 import { parseJsonl } from "../parseJsonl";
 import type { ProjectMeta } from "../types";
@@ -69,7 +69,7 @@ export const getProjectMeta = async (
   }
 
   const projectMeta: ProjectMeta = {
-    projectName: cwd ? dirname(cwd) : null,
+    projectName: cwd ? basename(cwd) : null,
     projectPath: cwd,
     lastModifiedAt: lastModifiedUnixTime
       ? new Date(lastModifiedUnixTime)
