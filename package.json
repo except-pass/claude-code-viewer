@@ -1,0 +1,53 @@
+{
+  "name": "claude-code-viewer",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "run-p 'dev:*'",
+    "dev:next": "next dev -p 3400 --turbopack",
+    "dev:path": "pathpida --output src/lib --ignorePath .gitignore --watch --enableStatic",
+    "build": "next build",
+    "lint": "run-s 'lint:*'",
+    "lint:biome-format": "biome format .",
+    "lint:biome-lint": "biome check .",
+    "fix": "run-s 'fix:*'",
+    "fix:biome-format": "biome format --write .",
+    "fix:biome-lint": "biome check --write .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest --run",
+    "test:watch": "vitest"
+  },
+  "dependencies": {
+    "@auth/core": "^0.40.0",
+    "@hono/auth-js": "^1.1.0",
+    "@hono/zod-validator": "^0.7.2",
+    "@tanstack/react-query": "^5.85.5",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "hono": "^4.9.5",
+    "lucide-react": "^0.542.0",
+    "next": "15.5.2",
+    "react": "^19.1.1",
+    "react-dom": "^19.1.1",
+    "react-error-boundary": "^6.0.0",
+    "tailwind-merge": "^3.3.1",
+    "ulid": "^3.0.1",
+    "zod": "^4.1.5"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^2.2.2",
+    "@tailwindcss/postcss": "^4.1.12",
+    "@tsconfig/strictest": "^2.0.5",
+    "@types/node": "^24.3.0",
+    "@types/react": "^19.1.12",
+    "@types/react-dom": "^19.1.9",
+    "npm-run-all2": "^8.0.4",
+    "pathpida": "^0.25.0",
+    "tailwindcss": "^4.1.12",
+    "tw-animate-css": "^1.3.7",
+    "typescript": "^5.9.2",
+    "vitest": "^3.2.4"
+  },
+  "packageManager": "pnpm@10.8.1"
+}
