@@ -1,5 +1,7 @@
-import type { UserMessageContent } from "@/lib/conversation-schema/message/UserMessageSchema";
+import { AlertCircle, Image as ImageIcon } from "lucide-react";
+import Image from "next/image";
 import type { FC } from "react";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -7,8 +9,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Image as ImageIcon, AlertCircle } from "lucide-react";
+import type { UserMessageContent } from "@/lib/conversation-schema/message/UserMessageSchema";
 import { TextContent } from "./TextContent";
 
 export const UserConversationContent: FC<{
@@ -43,7 +44,7 @@ export const UserConversationContent: FC<{
           </CardHeader>
           <CardContent>
             <div className="rounded-lg border overflow-hidden bg-background">
-              <img
+              <Image
                 src={`data:${content.source.media_type};base64,${content.source.data}`}
                 alt="User uploaded content"
                 className="max-w-full h-auto max-h-96 object-contain"

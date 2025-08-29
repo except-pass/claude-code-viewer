@@ -1,9 +1,8 @@
 "use client";
 
-import { ArrowLeftIcon } from "lucide-react";
+import { ArrowLeftIcon, FolderIcon, MessageSquareIcon } from "lucide-react";
 import Link from "next/link";
-import { FolderIcon, MessageSquareIcon } from "lucide-react";
-
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -11,11 +10,9 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-
-import { useProject } from "../hooks/useProject";
 import { pagesPath } from "../../../../lib/$path";
-import { parseCommandXml } from "../../../../server/service/parseCommandXml";
+import { useProject } from "../hooks/useProject";
+import { firstCommandToTitle } from "../services/firstCommandToTitle";
 
 export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
   const {
@@ -78,31 +75,9 @@ export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <span className="break-all overflow-ellipsis line-clamp-2 text-xl">
-                        {session.meta.firstContent
-                          ? (() => {
-                              const parsed = parseCommandXml(
-                                session.meta.firstContent
-                              );
-                              if (parsed.kind === "command") {
-                                return (
-                                  <span>
-                                    {parsed.commandName} {parsed.commandArgs}
-                                  </span>
-                                );
-                              }
-                              if (parsed.kind === "local-command-1") {
-                                return (
-                                  <span>
-                                    {parsed.commandName} {parsed.commandMessage}
-                                  </span>
-                                );
-                              }
-                              if (parsed.kind === "local-command-2") {
-                                return <span>{parsed.stdout}</span>;
-                              }
-                              return <span>{session.meta.firstContent}</span>;
-                            })()
-                          : ""}
+                        {session.meta.firstCommand !== null
+                          ? firstCommandToTitle(session.meta.firstCommand)
+                          : session.id}
                       </span>
                     </CardTitle>
                     <CardDescription className="font-mono text-xs">
@@ -117,7 +92,7 @@ export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
                       Last modified:{" "}
                       {session.meta.lastModifiedAt
                         ? new Date(
-                            session.meta.lastModifiedAt
+                            session.meta.lastModifiedAt,
                           ).toLocaleDateString()
                         : ""}
                     </p>
@@ -129,7 +104,7 @@ export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
                     <Button asChild className="w-full">
                       <Link
                         href={`/projects/${projectId}/sessions/${encodeURIComponent(
-                          session.id
+                          session.id,
                         )}`}
                       >
                         View Session

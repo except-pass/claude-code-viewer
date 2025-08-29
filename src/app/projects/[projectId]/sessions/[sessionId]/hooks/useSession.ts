@@ -1,8 +1,8 @@
-import { useConversationsQuery } from "./useConversationsQuery";
 import { useCallback, useMemo } from "react";
+import { useSessionQuery } from "./useSessionQuery";
 
-export const useConversations = (projectId: string, sessionId: string) => {
-  const query = useConversationsQuery(projectId, sessionId);
+export const useSession = (projectId: string, sessionId: string) => {
+  const query = useSessionQuery(projectId, sessionId);
 
   const toolResultMap = useMemo(() => {
     const entries = query.data.session.conversations.flatMap((conversation) => {
@@ -34,10 +34,11 @@ export const useConversations = (projectId: string, sessionId: string) => {
     (toolUseId: string) => {
       return toolResultMap.get(toolUseId);
     },
-    [toolResultMap]
+    [toolResultMap],
   );
 
   return {
+    session: query.data.session,
     conversations: query.data.session.conversations,
     getToolResult,
   };

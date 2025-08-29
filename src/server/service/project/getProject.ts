@@ -1,11 +1,11 @@
 import { existsSync } from "node:fs";
 
 import type { Project } from "../types";
-import { decodeProjectId } from "./id";
 import { getProjectMeta } from "./getProjectMeta";
+import { decodeProjectId } from "./id";
 
 export const getProject = async (
-  projectId: string
+  projectId: string,
 ): Promise<{ project: Project }> => {
   const fullPath = decodeProjectId(projectId);
   if (!existsSync(fullPath)) {

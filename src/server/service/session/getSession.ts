@@ -1,13 +1,13 @@
 import { readFile } from "node:fs/promises";
-import { decodeProjectId } from "../project/id";
 import { resolve } from "node:path";
 import { parseJsonl } from "../parseJsonl";
+import { decodeProjectId } from "../project/id";
 import type { SessionDetail } from "../types";
 import { getSessionMeta } from "./getSessionMeta";
 
 export const getSession = async (
   projectId: string,
-  sessionId: string
+  sessionId: string,
 ): Promise<{
   session: SessionDetail;
 }> => {

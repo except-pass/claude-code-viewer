@@ -1,12 +1,6 @@
-import { ToolResultContent } from "@/lib/conversation-schema/content/ToolResultContentSchema";
-import { AssistantMessageContent } from "@/lib/conversation-schema/message/AssistantMessageSchema";
-import { FC } from "react";
-
-import {
-  Collapsible,
-  CollapsibleContent,
-  CollapsibleTrigger,
-} from "@/components/ui/collapsible";
+import { ChevronDown, FileText, Lightbulb, Settings } from "lucide-react";
+import type { FC } from "react";
+import { Badge } from "@/components/ui/badge";
 import {
   Card,
   CardContent,
@@ -14,8 +8,13 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { ChevronDown, Lightbulb, Settings, FileText } from "lucide-react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+import type { ToolResultContent } from "@/lib/conversation-schema/content/ToolResultContentSchema";
+import type { AssistantMessageContent } from "@/lib/conversation-schema/message/AssistantMessageSchema";
 import { MarkdownContent } from "../../../../../../components/MarkdownContent";
 
 export const AssistantConversationContent: FC<{

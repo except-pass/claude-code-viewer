@@ -1,9 +1,8 @@
-import type { FC } from "react";
-
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Terminal } from "lucide-react";
+import type { FC } from "react";
 import { parseCommandXml } from "@/app/projects/[projectId]/services/parseCommandXml";
+import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { MarkdownContent } from "../../../../../../components/MarkdownContent";
 
 export const TextContent: FC<{ text: string }> = ({ text }) => {
@@ -11,7 +10,7 @@ export const TextContent: FC<{ text: string }> = ({ text }) => {
 
   if (parsed.kind === "command") {
     return (
-      <Card className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20 gap-2 py-3">
+      <Card className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20 gap-2 py-3 mb-3">
         <CardHeader className="py-0 px-4">
           <div className="flex items-center gap-2">
             <Terminal className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -46,7 +45,7 @@ export const TextContent: FC<{ text: string }> = ({ text }) => {
 
   if (parsed.kind === "local-command-1") {
     return (
-      <Card className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20 gap-2 py-3">
+      <Card className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20 gap-2 py-3 mb-3">
         <CardHeader className="py-0 px-4">
           <div className="flex items-center gap-2">
             <Terminal className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -62,7 +61,7 @@ export const TextContent: FC<{ text: string }> = ({ text }) => {
 
   if (parsed.kind === "local-command-2") {
     return (
-      <Card className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20 gap-2 py-3">
+      <Card className="border-green-200 bg-green-50/50 dark:border-green-800 dark:bg-green-950/20 gap-2 py-3 mb-3">
         <CardHeader className="py-0 px-4">
           <div className="flex items-center gap-2">
             <Terminal className="h-4 w-4 text-green-600 dark:text-green-400" />

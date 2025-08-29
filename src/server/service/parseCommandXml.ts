@@ -7,9 +7,7 @@ const matchSchema = z.object({
   content: z.string(),
 });
 
-export const parseCommandXml = (
-  content: string
-):
+export type ParsedCommand =
   | {
       kind: "command";
       commandName: string;
@@ -28,7 +26,9 @@ export const parseCommandXml = (
   | {
       kind: "text";
       content: string;
-    } => {
+    };
+
+export const parseCommandXml = (content: string): ParsedCommand => {
   const matches = Array.from(content.matchAll(regExp))
     .map((match) => matchSchema.safeParse(match.groups))
     .filter((result) => result.success)
@@ -42,16 +42,16 @@ export const parseCommandXml = (
   }
 
   const commandName = matches.find(
-    (match) => match.tag === "command-name"
+    (match) => match.tag === "command-name",
   )?.content;
   const commandArgs = matches.find(
-    (match) => match.tag === "command-args"
+    (match) => match.tag === "command-args",
   )?.content;
   const commandMessage = matches.find(
-    (match) => match.tag === "command-message"
+    (match) => match.tag === "command-message",
   )?.content;
   const localCommandStdout = matches.find(
-    (match) => match.tag === "local-command-stdout"
+    (match) => match.tag === "local-command-stdout",
   )?.content;
 
   switch (true) {

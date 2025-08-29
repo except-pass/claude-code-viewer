@@ -1,10 +1,10 @@
+import { ChevronDown } from "lucide-react";
 import type { FC, PropsWithChildren } from "react";
 import {
   Collapsible,
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
 
 export const MetaConversationContent: FC<PropsWithChildren> = ({
   children,

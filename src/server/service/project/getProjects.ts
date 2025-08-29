@@ -3,8 +3,8 @@ import { resolve } from "node:path";
 
 import { claudeProjectPath } from "../paths";
 import type { Project } from "../types";
-import { encodeProjectId } from "./id";
 import { getProjectMeta } from "./getProjectMeta";
+import { encodeProjectId } from "./id";
 
 export const getProjects = async (): Promise<{ projects: Project[] }> => {
   const dirents = await readdir(claudeProjectPath, { withFileTypes: true });
@@ -24,6 +24,11 @@ export const getProjects = async (): Promise<{ projects: Project[] }> => {
   );
 
   return {
-    projects,
+    projects: projects.sort((a, b) => {
+      return (
+        (b.meta.lastModifiedAt?.getTime() ?? 0) -
+        (a.meta.lastModifiedAt?.getTime() ?? 0)
+      );
+    }),
   };
 };

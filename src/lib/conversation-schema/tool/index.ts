@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { TodoToolResultSchema } from "./TodoSchema";
 import { CommonToolResultSchema } from "./CommonToolSchema";
+import { TodoToolResultSchema } from "./TodoSchema";
 
 export const ToolUseResultSchema = z.union([
   z.string(),

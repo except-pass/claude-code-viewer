@@ -1,4 +1,5 @@
 import type { Conversation } from "../../lib/conversation-schema";
+import type { ParsedCommand } from "./parseCommandXml";
 
 export type Project = {
   id: string;
@@ -21,7 +22,7 @@ export type Session = {
 
 export type SessionMeta = {
   messageCount: number;
-  firstContent: string | null;
+  firstCommand: ParsedCommand | null;
   lastModifiedAt: Date | null;
 };
 

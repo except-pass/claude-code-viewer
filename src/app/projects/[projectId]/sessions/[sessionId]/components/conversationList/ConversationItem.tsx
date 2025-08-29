@@ -1,11 +1,11 @@
+import type { FC } from "react";
 import type { Conversation } from "@/lib/conversation-schema";
 import type { ToolResultContent } from "@/lib/conversation-schema/content/ToolResultContentSchema";
-import type { FC } from "react";
-import { UserConversationContent } from "./UserConversationContent";
 import { AssistantConversationContent } from "./AssistantConversationContent";
 import { MetaConversationContent } from "./MetaConversationContent";
-import { SystemConversationContent } from "./SystemConversationContent";
 import { SummaryConversationContent } from "./SummaryConversationContent";
+import { SystemConversationContent } from "./SystemConversationContent";
+import { UserConversationContent } from "./UserConversationContent";
 
 export const ConversationItem: FC<{
   conversation: Conversation;

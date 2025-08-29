@@ -26,6 +26,11 @@ export const getSessions = async (
   );
 
   return {
-    sessions,
+    sessions: sessions.sort((a, b) => {
+      return (
+        (b.meta.lastModifiedAt?.getTime() ?? 0) -
+        (a.meta.lastModifiedAt?.getTime() ?? 0)
+      );
+    }),
   };
 };

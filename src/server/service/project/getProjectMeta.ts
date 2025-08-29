@@ -1,13 +1,18 @@
 import { statSync } from "node:fs";
 import { readdir, readFile } from "node:fs/promises";
-import { basename, dirname, resolve } from "node:path";
+import { basename, resolve } from "node:path";
 
 import { parseJsonl } from "../parseJsonl";
 import type { ProjectMeta } from "../types";
 
-const projectMetaCache = new Map<string, ProjectMeta>();
+const projectPathCache = new Map<string, string | null>();
 
-const extractMetaFromJsonl = async (filePath: string) => {
+const extractProjectPathFromJsonl = async (filePath: string) => {
+  const cached = projectPathCache.get(filePath);
+  if (cached !== undefined) {
+    return cached;
+  }
+
   const content = await readFile(filePath, "utf-8");
   const lines = content.split("\n");
 
@@ -25,19 +30,16 @@ const extractMetaFromJsonl = async (filePath: string) => {
     break;
   }
 
-  return {
-    cwd,
-  } as const;
+  if (cwd !== null) {
+    projectPathCache.set(filePath, cwd);
+  }
+
+  return cwd;
 };
 
 export const getProjectMeta = async (
-  claudeProjectPath: string
+  claudeProjectPath: string,
 ): Promise<ProjectMeta> => {
-  const cached = projectMetaCache.get(claudeProjectPath);
-  if (cached !== undefined) {
-    return cached;
-  }
-
   const dirents = await readdir(claudeProjectPath, { withFileTypes: true });
   const files = dirents
     .filter((d) => d.isFile() && d.name.endsWith(".jsonl"))
@@ -46,7 +48,7 @@ export const getProjectMeta = async (
         ({
           fullPath: resolve(d.parentPath, d.name),
           stats: statSync(resolve(d.parentPath, d.name)),
-        } as const)
+        }) as const,
     )
     .toSorted((a, b) => {
       return a.stats.ctime.getTime() - b.stats.ctime.getTime();
@@ -54,30 +56,26 @@ export const getProjectMeta = async (
 
   const lastModifiedUnixTime = files.at(-1)?.stats.ctime.getTime();
 
-  let cwd: string | null = null;
+  let projectPath: string | null = null;
 
   for (const file of files) {
-    const result = await extractMetaFromJsonl(file.fullPath);
+    projectPath = await extractProjectPathFromJsonl(file.fullPath);
 
-    if (result.cwd === null) {
+    if (projectPath === null) {
       continue;
     }
-
-    cwd = result.cwd;
 
     break;
   }
 
   const projectMeta: ProjectMeta = {
-    projectName: cwd ? basename(cwd) : null,
-    projectPath: cwd,
+    projectName: projectPath ? basename(projectPath) : null,
+    projectPath,
     lastModifiedAt: lastModifiedUnixTime
       ? new Date(lastModifiedUnixTime)
       : null,
     sessionCount: files.length,
   };
-
-  projectMetaCache.set(claudeProjectPath, projectMeta);
 
   return projectMeta;
 };

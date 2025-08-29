@@ -1,8 +1,8 @@
 "use client";
 
-import type { Conversation } from "@/lib/conversation-schema";
 import type { FC } from "react";
-import { useConversations } from "../../hooks/useConversations";
+import type { Conversation } from "@/lib/conversation-schema";
+import type { ToolResultContent } from "@/lib/conversation-schema/content/ToolResultContentSchema";
 import { ConversationItem } from "./ConversationItem";
 
 const getConversationKey = (conversation: Conversation) => {
@@ -26,19 +26,14 @@ const getConversationKey = (conversation: Conversation) => {
 };
 
 type ConversationListProps = {
-  projectId: string;
-  sessionId: string;
+  conversations: Conversation[];
+  getToolResult: (toolUseId: string) => ToolResultContent | undefined;
 };
 
 export const ConversationList: FC<ConversationListProps> = ({
-  projectId,
-  sessionId,
+  conversations,
+  getToolResult,
 }) => {
-  const { conversations, getToolResult } = useConversations(
-    projectId,
-    sessionId
-  );
-
   return (
     <ul>
       {conversations.flatMap((conversation) => {
@@ -60,8 +55,8 @@ export const ConversationList: FC<ConversationListProps> = ({
               conversation.type === "user"
                 ? "justify-end"
                 : conversation.type === "assistant"
-                ? "justify-start"
-                : "justify-center"
+                  ? "justify-start"
+                  : "justify-center"
             }`}
             key={getConversationKey(conversation)}
           >
@@ -70,8 +65,8 @@ export const ConversationList: FC<ConversationListProps> = ({
                 conversation.type === "user"
                   ? "w-[90%]"
                   : conversation.type === "assistant"
-                  ? "w-[90%]"
-                  : "w-[100%]"
+                    ? "w-[90%]"
+                    : "w-[100%]"
               }`}
             >
               {elm}

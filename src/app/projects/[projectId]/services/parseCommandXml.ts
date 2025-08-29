@@ -1,7 +1,7 @@
 const regExp = /<(?<tag>[^>]+)>(?<content>\s*[^<]*?\s*)<\/\k<tag>>/g;
 
 export const parseCommandXml = (
-  content: string
+  content: string,
 ):
   | {
       kind: "command";
@@ -37,16 +37,16 @@ export const parseCommandXml = (
   }
 
   const commandName = matches.find(
-    (match) => match.tag === "command-name"
+    (match) => match.tag === "command-name",
   )?.content;
   const commandArgs = matches.find(
-    (match) => match.tag === "command-args"
+    (match) => match.tag === "command-args",
   )?.content;
   const commandMessage = matches.find(
-    (match) => match.tag === "command-message"
+    (match) => match.tag === "command-message",
   )?.content;
   const localCommandStdout = matches.find(
-    (match) => match.tag === "local-command-stdout"
+    (match) => match.tag === "local-command-stdout",
   )?.content;
 
   switch (true) {

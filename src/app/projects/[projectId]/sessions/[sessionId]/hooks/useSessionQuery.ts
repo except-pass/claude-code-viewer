@@ -1,7 +1,7 @@
 import { useSuspenseQuery } from "@tanstack/react-query";
 import { honoClient } from "../../../../../../lib/api/client";
 
-export const useConversationsQuery = (projectId: string, sessionId: string) => {
+export const useSessionQuery = (projectId: string, sessionId: string) => {
   return useSuspenseQuery({
     queryKey: ["conversations", sessionId],
     queryFn: async () => {
