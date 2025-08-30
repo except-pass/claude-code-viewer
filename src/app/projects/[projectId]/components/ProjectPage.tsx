@@ -1,7 +1,9 @@
 "use client";
 
+import { useAtom } from "jotai";
 import { ArrowLeftIcon, FolderIcon, MessageSquareIcon } from "lucide-react";
 import Link from "next/link";
+import { useId } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -10,14 +12,24 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
+import { hideSessionsWithoutUserMessagesAtom } from "../store/filterAtoms";
 import { pagesPath } from "../../../../lib/$path";
 import { useProject } from "../hooks/useProject";
 import { firstCommandToTitle } from "../services/firstCommandToTitle";
 
 export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
+  const checkboxId = useId();
   const {
     data: { project, sessions },
   } = useProject(projectId);
+  const [hideSessionsWithoutUserMessages, setHideSessionsWithoutUserMessages] =
+    useAtom(hideSessionsWithoutUserMessagesAtom);
+
+  // Apply filtering
+  const filteredSessions = hideSessionsWithoutUserMessages
+    ? sessions.filter((session) => session.meta.firstCommand !== null)
+    : sessions;
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -47,10 +59,36 @@ export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
         <section>
           <h2 className="text-xl font-semibold mb-4">
             Conversation Sessions{" "}
-            {project.meta.sessionCount ? `(${project.meta.sessionCount})` : ""}
+            {filteredSessions.length > 0 ? `(${filteredSessions.length})` : ""}
+            {hideSessionsWithoutUserMessages &&
+              filteredSessions.length !== sessions.length && (
+                <span className="text-sm text-muted-foreground ml-2">
+                  of {sessions.length} total
+                </span>
+              )}
           </h2>
 
-          {sessions.length === 0 ? (
+          {/* Filter Controls */}
+          <div className="mb-6 p-4 bg-muted/50 rounded-lg">
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id={checkboxId}
+                checked={hideSessionsWithoutUserMessages}
+                onCheckedChange={setHideSessionsWithoutUserMessages}
+              />
+              <label
+                htmlFor={checkboxId}
+                className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                Hide sessions without user messages
+              </label>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1 ml-6">
+              Only show sessions that contain user commands or messages
+            </p>
+          </div>
+
+          {filteredSessions.length === 0 ? (
             <Card>
               <CardContent className="flex flex-col items-center justify-center py-12">
                 <MessageSquareIcon className="w-12 h-12 text-muted-foreground mb-4" />
@@ -64,7 +102,7 @@ export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
             </Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-1 lg:grid-cols-1">
-              {sessions.map((session) => (
+              {filteredSessions.map((session) => (
                 <Card
                   key={session.id}
                   className="hover:shadow-md transition-shadow"
@@ -89,7 +127,7 @@ export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
                       Last modified:{" "}
                       {session.meta.lastModifiedAt
                         ? new Date(
-                            session.meta.lastModifiedAt,
+                            session.meta.lastModifiedAt
                           ).toLocaleDateString()
                         : ""}
                     </p>
@@ -101,7 +139,7 @@ export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
                     <Button asChild className="w-full">
                       <Link
                         href={`/projects/${projectId}/sessions/${encodeURIComponent(
-                          session.id,
+                          session.id
                         )}`}
                       >
                         View Session

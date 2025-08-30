@@ -35,9 +35,9 @@ export const ConversationItem: FC<{
     );
   }
 
+  // sidechain = サブタスクのこと
   if (conversation.isSidechain) {
-    // sidechain = サブタスクのこと
-    // 別途ツール呼び出しの方で描画可能にするのでここでは表示しない
+    // Root 以外はモーダルで中身を表示するのでここでは描画しない
     if (!isRootSidechain(conversation)) {
       return null;
     }
@@ -46,7 +46,7 @@ export const ConversationItem: FC<{
       <SidechainConversationModal
         conversation={conversation}
         sidechainConversations={getSidechainConversations(
-          conversation.uuid,
+          conversation.uuid
         ).map((original) => {
           if (original.type === "summary") return original;
           return {
