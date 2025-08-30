@@ -9,7 +9,7 @@ export const sessionFilterAtom = atomWithStorage<SessionFilterOptions>(
   "session-filters",
   {
     hideSessionsWithoutUserMessages: true,
-  }
+  },
 );
 
 export const hideSessionsWithoutUserMessagesAtom = atom(
@@ -20,5 +20,5 @@ export const hideSessionsWithoutUserMessagesAtom = atom(
       ...currentFilters,
       hideSessionsWithoutUserMessages: newValue,
     });
-  }
+  },
 );

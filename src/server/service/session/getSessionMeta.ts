@@ -17,7 +17,7 @@ const ignoreCommands = [
 
 const getFirstCommand = (
   jsonlFilePath: string,
-  lines: string[]
+  lines: string[],
 ): ParsedCommand | null => {
   const cached = firstCommandCache.get(jsonlFilePath);
   if (cached !== undefined) {
@@ -37,14 +37,14 @@ const getFirstCommand = (
       conversation === null
         ? null
         : typeof conversation.message.content === "string"
-        ? conversation.message.content
-        : (() => {
-            const firstContent = conversation.message.content.at(0);
-            if (firstContent === undefined) return null;
-            if (typeof firstContent === "string") return firstContent;
-            if (firstContent.type === "text") return firstContent.text;
-            return null;
-          })();
+          ? conversation.message.content
+          : (() => {
+              const firstContent = conversation.message.content.at(0);
+              if (firstContent === undefined) return null;
+              if (typeof firstContent === "string") return firstContent;
+              if (firstContent.type === "text") return firstContent.text;
+              return null;
+            })();
 
     if (firstUserText === null) {
       continue;
@@ -84,7 +84,7 @@ const getFirstCommand = (
 };
 
 export const getSessionMeta = async (
-  jsonlFilePath: string
+  jsonlFilePath: string,
 ): Promise<SessionMeta> => {
   const stats = statSync(jsonlFilePath);
   const lastModifiedUnixTime = stats.ctime.getTime();

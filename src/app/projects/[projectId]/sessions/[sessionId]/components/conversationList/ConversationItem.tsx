@@ -46,7 +46,7 @@ export const ConversationItem: FC<{
       <SidechainConversationModal
         conversation={conversation}
         sidechainConversations={getSidechainConversations(
-          conversation.uuid
+          conversation.uuid,
         ).map((original) => {
           if (original.type === "summary") return original;
           return {

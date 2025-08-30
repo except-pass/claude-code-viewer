@@ -13,9 +13,9 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
-import { hideSessionsWithoutUserMessagesAtom } from "../store/filterAtoms";
 import { useProject } from "../hooks/useProject";
 import { firstCommandToTitle } from "../services/firstCommandToTitle";
+import { hideSessionsWithoutUserMessagesAtom } from "../store/filterAtoms";
 
 export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
   const checkboxId = useId();
@@ -123,7 +123,7 @@ export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
                       Last modified:{" "}
                       {session.meta.lastModifiedAt
                         ? new Date(
-                            session.meta.lastModifiedAt
+                            session.meta.lastModifiedAt,
                           ).toLocaleDateString()
                         : ""}
                     </p>
@@ -135,7 +135,7 @@ export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
                     <Button asChild className="w-full">
                       <Link
                         href={`/projects/${projectId}/sessions/${encodeURIComponent(
-                          session.id
+                          session.id,
                         )}`}
                       >
                         View Session

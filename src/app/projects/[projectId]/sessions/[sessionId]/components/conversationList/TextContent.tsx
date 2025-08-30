@@ -1,8 +1,9 @@
 import { Terminal } from "lucide-react";
 import type { FC } from "react";
-import { parseCommandXml } from "@/app/projects/[projectId]/services/parseCommandXml";
+
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { parseCommandXml } from "../../../../../../../server/service/parseCommandXml";
 import { MarkdownContent } from "../../../../../../components/MarkdownContent";
 
 export const TextContent: FC<{ text: string }> = ({ text }) => {
