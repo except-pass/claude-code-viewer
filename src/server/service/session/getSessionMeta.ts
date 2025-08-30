@@ -96,7 +96,7 @@ export const getSessionMeta = async (
     messageCount: lines.length,
     firstCommand: getFirstCommand(jsonlFilePath, lines),
     lastModifiedAt: lastModifiedUnixTime
-      ? new Date(lastModifiedUnixTime)
+      ? new Date(lastModifiedUnixTime).toISOString()
       : null,
   };
 

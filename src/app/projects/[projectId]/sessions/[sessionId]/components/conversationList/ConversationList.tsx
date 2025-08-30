@@ -51,28 +51,22 @@ export const ConversationList: FC<ConversationListProps> = ({
           />
         );
 
+        const isSidechain =
+          conversation.type !== "summary" && conversation.isSidechain;
+
         return [
           <li
             className={`w-full flex ${
-              conversation.type === "user"
-                ? "justify-end"
-                : conversation.type === "assistant"
-                  ? "justify-start"
-                  : "justify-center"
+              isSidechain ||
+              conversation.type === "assistant" ||
+              conversation.type === "system" ||
+              conversation.type === "summary"
+                ? "justify-start"
+                : "justify-end"
             }`}
             key={getConversationKey(conversation)}
           >
-            <div
-              className={`${
-                conversation.type === "user"
-                  ? "w-[90%]"
-                  : conversation.type === "assistant"
-                    ? "w-[90%]"
-                    : "w-[100%]"
-              }`}
-            >
-              {elm}
-            </div>
+            <div className="w-[85%]">{elm}</div>
           </li>,
         ];
       })}

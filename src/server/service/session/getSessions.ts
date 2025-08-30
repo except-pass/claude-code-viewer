@@ -5,6 +5,11 @@ import { decodeProjectId } from "../project/id";
 import type { Session } from "../types";
 import { getSessionMeta } from "./getSessionMeta";
 
+const getTime = (date: string | null) => {
+  if (date === null) return 0;
+  return new Date(date).getTime();
+};
+
 export const getSessions = async (
   projectId: string,
 ): Promise<{ sessions: Session[] }> => {
@@ -27,10 +32,7 @@ export const getSessions = async (
 
   return {
     sessions: sessions.sort((a, b) => {
-      return (
-        (b.meta.lastModifiedAt?.getTime() ?? 0) -
-        (a.meta.lastModifiedAt?.getTime() ?? 0)
-      );
+      return getTime(b.meta.lastModifiedAt) - getTime(a.meta.lastModifiedAt);
     }),
   };
 };

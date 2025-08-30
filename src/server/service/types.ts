@@ -23,7 +23,7 @@ export type Session = {
 export type SessionMeta = {
   messageCount: number;
   firstCommand: ParsedCommand | null;
-  lastModifiedAt: Date | null;
+  lastModifiedAt: string | null;
 };
 
 export type SessionDetail = Session & {

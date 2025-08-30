@@ -63,7 +63,11 @@ export const SidechainConversationModal: FC<
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="w-full mb-3">
+        <Button
+          variant="outline"
+          size="sm"
+          className="w-full mb-3 items-center justify-start"
+        >
           <div className="flex items-center gap-2 overflow-hidden">
             <Eye className="h-4 w-4 flex-shrink-0" />
             <span className="overflow-hidden text-ellipsis">
