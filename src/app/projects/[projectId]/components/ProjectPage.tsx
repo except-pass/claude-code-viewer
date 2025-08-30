@@ -14,7 +14,6 @@ import {
 } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
 import { hideSessionsWithoutUserMessagesAtom } from "../store/filterAtoms";
-import { pagesPath } from "../../../../lib/$path";
 import { useProject } from "../hooks/useProject";
 import { firstCommandToTitle } from "../services/firstCommandToTitle";
 
@@ -35,10 +34,7 @@ export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
     <div className="container mx-auto px-4 py-8">
       <header className="mb-8">
         <Button asChild variant="ghost" className="mb-4">
-          <Link
-            href={pagesPath.projects.$url().pathname}
-            className="flex items-center gap-2"
-          >
+          <Link href="/projects" className="flex items-center gap-2">
             <ArrowLeftIcon className="w-4 h-4" />
             Back to Projects
           </Link>
