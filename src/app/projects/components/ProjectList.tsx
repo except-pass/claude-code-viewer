@@ -40,10 +40,9 @@ export const ProjectList: FC = () => {
                 {project.meta.projectName ?? project.claudeProjectPath}
               </span>
             </CardTitle>
-            <CardDescription>
-              {project.meta.sessionCount} conversation
-              {project.meta.sessionCount !== 1 ? "s" : ""}
-            </CardDescription>
+            {project.meta.projectPath ? (
+              <CardDescription>{project.meta.projectPath}</CardDescription>
+            ) : null}
           </CardHeader>
           <CardContent className="space-y-2">
             <p className="text-sm text-muted-foreground">
@@ -52,14 +51,14 @@ export const ProjectList: FC = () => {
                 ? new Date(project.meta.lastModifiedAt).toLocaleDateString()
                 : ""}
             </p>
-            <p className="text-xs text-muted-foreground font-mono truncate">
-              Workspace: {project.meta.projectPath ?? "unknown"}
+            <p className="text-xs text-muted-foreground">
+              Messages: {project.meta.sessionCount}
             </p>
           </CardContent>
           <CardContent className="pt-0">
             <Button asChild className="w-full">
               <Link href={`/projects/${encodeURIComponent(project.id)}`}>
-                View Conversations
+                View Sessions
               </Link>
             </Button>
           </CardContent>

@@ -35,14 +35,11 @@ export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
         <div className="flex items-center gap-3 mb-2">
           <FolderIcon className="w-6 h-6" />
           <h1 className="text-3xl font-bold">
-            {project.meta.projectName ?? "unknown"}
+            {project.meta.projectPath ?? project.claudeProjectPath}
           </h1>
         </div>
         <p className="text-muted-foreground font-mono text-sm">
-          Workspace: {project.meta.projectPath ?? "unknown"}
-        </p>
-        <p className="text-muted-foreground font-mono text-sm">
-          Claude History: {project.claudeProjectPath ?? "unknown"}
+          History File: {project.claudeProjectPath ?? "unknown"}
         </p>
       </header>
 

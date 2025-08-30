@@ -6,7 +6,7 @@ import type { Session } from "../types";
 import { getSessionMeta } from "./getSessionMeta";
 
 export const getSessions = async (
-  projectId: string
+  projectId: string,
 ): Promise<{ sessions: Session[] }> => {
   const claudeProjectPath = decodeProjectId(projectId);
 
@@ -22,7 +22,7 @@ export const getSessions = async (
           jsonlFilePath: fullPath,
           meta: await getSessionMeta(fullPath),
         };
-      })
+      }),
   );
 
   return {

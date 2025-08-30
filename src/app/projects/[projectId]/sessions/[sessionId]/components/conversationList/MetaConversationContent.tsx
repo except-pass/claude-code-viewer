@@ -20,9 +20,7 @@ export const MetaConversationContent: FC<PropsWithChildren> = ({
         </div>
       </CollapsibleTrigger>
       <CollapsibleContent>
-        <div className="bg-background rounded border p-3 mt-2">
-          <pre className="text-xs overflow-x-auto">{children}</pre>
-        </div>
+        <div className="bg-background rounded border p-3 mt-2">{children}</div>
       </CollapsibleContent>
     </Collapsible>
   );

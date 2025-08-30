@@ -1,6 +1,7 @@
 import type { FC } from "react";
 import type { Conversation } from "@/lib/conversation-schema";
 import type { ToolResultContent } from "@/lib/conversation-schema/content/ToolResultContentSchema";
+import { SidechainConversationModal } from "../conversationModal/SidechainConversationModal";
 import { AssistantConversationContent } from "./AssistantConversationContent";
 import { MetaConversationContent } from "./MetaConversationContent";
 import { SummaryConversationContent } from "./SummaryConversationContent";
@@ -10,7 +11,14 @@ import { UserConversationContent } from "./UserConversationContent";
 export const ConversationItem: FC<{
   conversation: Conversation;
   getToolResult: (toolUseId: string) => ToolResultContent | undefined;
-}> = ({ conversation, getToolResult }) => {
+  isRootSidechain: (conversation: Conversation) => boolean;
+  getSidechainConversations: (rootUuid: string) => Conversation[];
+}> = ({
+  conversation,
+  getToolResult,
+  isRootSidechain,
+  getSidechainConversations,
+}) => {
   if (conversation.type === "summary") {
     return (
       <SummaryConversationContent>
@@ -30,7 +38,25 @@ export const ConversationItem: FC<{
   if (conversation.isSidechain) {
     // sidechain = サブタスクのこと
     // 別途ツール呼び出しの方で描画可能にするのでここでは表示しない
-    return null;
+    if (!isRootSidechain(conversation)) {
+      return null;
+    }
+
+    return (
+      <SidechainConversationModal
+        conversation={conversation}
+        sidechainConversations={getSidechainConversations(
+          conversation.uuid,
+        ).map((original) => {
+          if (original.type === "summary") return original;
+          return {
+            ...original,
+            isSidechain: false,
+          };
+        })}
+        getToolResult={getToolResult}
+      />
+    );
   }
 
   if (conversation.type === "user") {

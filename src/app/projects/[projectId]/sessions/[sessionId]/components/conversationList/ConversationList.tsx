@@ -3,6 +3,7 @@
 import type { FC } from "react";
 import type { Conversation } from "@/lib/conversation-schema";
 import type { ToolResultContent } from "@/lib/conversation-schema/content/ToolResultContentSchema";
+import { useSidechain } from "../../hooks/useSidechain";
 import { ConversationItem } from "./ConversationItem";
 
 const getConversationKey = (conversation: Conversation) => {
@@ -34,6 +35,9 @@ export const ConversationList: FC<ConversationListProps> = ({
   conversations,
   getToolResult,
 }) => {
+  const { isRootSidechain, getSidechainConversations } =
+    useSidechain(conversations);
+
   return (
     <ul>
       {conversations.flatMap((conversation) => {
@@ -42,12 +46,10 @@ export const ConversationList: FC<ConversationListProps> = ({
             key={getConversationKey(conversation)}
             conversation={conversation}
             getToolResult={getToolResult}
+            isRootSidechain={isRootSidechain}
+            getSidechainConversations={getSidechainConversations}
           />
         );
-
-        if (elm === null) {
-          return [];
-        }
 
         return [
           <li

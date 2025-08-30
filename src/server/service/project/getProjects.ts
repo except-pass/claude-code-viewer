@@ -20,7 +20,7 @@ export const getProjects = async (): Promise<{ projects: Project[] }> => {
           claudeProjectPath: fullPath,
           meta: await getProjectMeta(fullPath),
         };
-      })
+      }),
   );
 
   return {
