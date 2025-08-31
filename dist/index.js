@@ -1,3 +1,6 @@
 #!/usr/bin/env node
 
-import "./standalone/server.js";
+await import("./standalone/server.js").catch((error) => {
+  console.error(error);
+  process.exit(1);
+});
