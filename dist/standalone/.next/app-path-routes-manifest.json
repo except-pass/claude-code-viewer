@@ -1,8 +1,8 @@
 {
   "/_not-found/page": "/_not-found",
   "/api/[[...route]]/route": "/api/[[...route]]",
-  "/projects/[projectId]/page": "/projects/[projectId]",
   "/page": "/",
-  "/projects/[projectId]/sessions/[sessionId]/page": "/projects/[projectId]/sessions/[sessionId]",
-  "/projects/page": "/projects"
+  "/projects/[projectId]/page": "/projects/[projectId]",
+  "/projects/page": "/projects",
+  "/projects/[projectId]/sessions/[sessionId]/page": "/projects/[projectId]/sessions/[sessionId]"
 }
