@@ -3,6 +3,12 @@
   "version": "0.0.0",
   "private": true,
   "type": "module",
+  "files": [
+    "dist"
+  ],
+  "bin": {
+    "claude-code-viewer": "dist/standalone/server.js"
+  },
   "scripts": {
     "dev": "run-p 'dev:*'",
     "dev:next": "next dev -p 3400 --turbopack",
