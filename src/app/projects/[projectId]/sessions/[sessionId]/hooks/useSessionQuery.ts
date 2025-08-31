@@ -3,7 +3,7 @@ import { honoClient } from "../../../../../../lib/api/client";
 
 export const useSessionQuery = (projectId: string, sessionId: string) => {
   return useSuspenseQuery({
-    queryKey: ["conversations", sessionId],
+    queryKey: ["sessions", sessionId],
     queryFn: async () => {
       const response = await honoClient.api.projects[":projectId"].sessions[
         ":sessionId"

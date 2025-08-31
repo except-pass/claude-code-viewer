@@ -12,6 +12,5 @@ export const useProject = (projectId: string) => {
       return await response.json();
     },
     refetchOnReconnect: true,
-    refetchInterval: 10 * 1000,
   });
 };

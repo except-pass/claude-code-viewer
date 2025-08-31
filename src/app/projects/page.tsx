@@ -1,6 +1,9 @@
 import { HistoryIcon } from "lucide-react";
 import { ProjectList } from "./components/ProjectList";
 
+export const dynamic = "force-dynamic";
+export const fetchCache = "force-no-store";
+
 export default async function ProjectsPage() {
   return (
     <div className="container mx-auto px-4 py-8">
