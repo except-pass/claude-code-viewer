@@ -1,8 +1,0 @@
-{
-  "/_not-found/page": "/_not-found",
-  "/api/[[...route]]/route": "/api/[[...route]]",
-  "/page": "/",
-  "/projects/[projectId]/page": "/projects/[projectId]",
-  "/projects/page": "/projects",
-  "/projects/[projectId]/sessions/[sessionId]/page": "/projects/[projectId]/sessions/[sessionId]"
-}
