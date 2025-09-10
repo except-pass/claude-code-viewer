@@ -20,6 +20,17 @@ import type { ToolResultContent } from "@/lib/conversation-schema/content/ToolRe
 import type { AssistantMessageContent } from "@/lib/conversation-schema/message/AssistantMessageSchema";
 import { MarkdownContent } from "../../../../../../components/MarkdownContent";
 
+const shouldExpandTool = (toolName: string) => {
+  // Check for various edit-related tool names
+  const editToolNames = [
+    "Edit", "edit", 
+    "str_replace_editor", "str_replace_based_edit_tool",
+    "write_to_file", "create_file", "modify_file",
+    "file_editor", "text_editor"
+  ];
+  return editToolNames.includes(toolName);
+};
+
 export const AssistantConversationContent: FC<{
   content: AssistantMessageContent;
   getToolResult: (toolUseId: string) => ToolResultContent | undefined;
@@ -78,7 +89,7 @@ export const AssistantConversationContent: FC<{
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 py-0 px-4">
-          <Collapsible>
+          <Collapsible defaultOpen={shouldExpandTool(content.name)}>
             <CollapsibleTrigger asChild>
               <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2">
                 <h4 className="text-xs font-medium text-muted-foreground">
@@ -99,7 +110,7 @@ export const AssistantConversationContent: FC<{
             </CollapsibleContent>
           </Collapsible>
           {toolResult && (
-            <Collapsible>
+            <Collapsible defaultOpen={shouldExpandTool(content.name)}>
               <CollapsibleTrigger asChild>
                 <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2">
                   <h4 className="text-xs font-medium text-muted-foreground">

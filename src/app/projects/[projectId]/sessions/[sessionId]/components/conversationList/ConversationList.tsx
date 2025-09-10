@@ -109,18 +109,118 @@ export const ConversationList: FC<ConversationListProps> = ({
   const { isRootSidechain, getSidechainConversations } =
     useSidechain(validConversations);
 
+  // Group conversations: each user message followed by all responses until the next user message
+  // This ensures only one "Full output" section per user prompt
+  const groupedConversations = useMemo(() => {
+    const groups: (Conversation | ErrorJsonl | { type: 'assistant-group', conversations: Conversation[] })[] = [];
+    let currentAssistantGroup: Conversation[] = [];
+    let hasSeenUserMessage = false;
+
+    for (const conversation of conversations) {
+      if (conversation.type === "x-error") {
+        // Flush any pending assistant group only if we have content
+        if (currentAssistantGroup.length > 0 && hasSeenUserMessage) {
+          groups.push({ type: 'assistant-group', conversations: [...currentAssistantGroup] });
+          currentAssistantGroup = [];
+          hasSeenUserMessage = false;
+        }
+        groups.push(conversation);
+      } else if (conversation.type === "user") {
+        // User message always flushes assistant group if we have responses
+        if (currentAssistantGroup.length > 0 && hasSeenUserMessage) {
+          groups.push({ type: 'assistant-group', conversations: [...currentAssistantGroup] });
+          currentAssistantGroup = [];
+        }
+        groups.push(conversation);
+        hasSeenUserMessage = true;
+      } else {
+        // Everything else (assistant, system, summary) goes into the assistant group
+        // Only create groups if we've seen a user message first
+        if (hasSeenUserMessage) {
+          currentAssistantGroup.push(conversation);
+        } else {
+          // If no user message yet, treat as individual conversation
+          groups.push(conversation);
+        }
+      }
+    }
+
+    // Flush final assistant group if any and we have seen a user message
+    if (currentAssistantGroup.length > 0 && hasSeenUserMessage) {
+      groups.push({ type: 'assistant-group', conversations: [...currentAssistantGroup] });
+    }
+
+    return groups;
+  }, [conversations]);
+
   return (
     <ul>
-      {conversations.flatMap((conversation) => {
-        if (conversation.type === "x-error") {
+      {groupedConversations.flatMap((group, groupIndex) => {
+        if (group.type === "x-error") {
           return (
             <SchemaErrorDisplay
-              key={`error_${conversation.line}`}
-              errorLine={conversation.line}
+              key={`error_${group.line}`}
+              errorLine={group.line}
             />
           );
         }
 
+        if (group.type === "assistant-group") {
+          // Extract tool names from all conversations in the group
+          const toolNames = new Set<string>();
+          group.conversations.forEach(conversation => {
+            if (conversation.type === "assistant") {
+              conversation.message.content.forEach(content => {
+                if (content.type === "tool_use") {
+                  toolNames.add(content.name);
+                }
+              });
+            }
+          });
+          
+          const toolNamesText = toolNames.size > 0 ? ` (${Array.from(toolNames).join(", ")})` : "";
+          
+          // Render grouped assistant messages in a collapsible
+          const assistantContent = (
+            <ul className="w-full">
+              {group.conversations.map((conversation) => (
+                <li key={getConversationKey(conversation)}>
+                  <ConversationItem
+                    conversation={conversation}
+                    getToolResult={getToolResult}
+                    isRootSidechain={isRootSidechain}
+                    getSidechainConversations={getSidechainConversations}
+                  />
+                </li>
+              ))}
+            </ul>
+          );
+
+          return (
+            <li className="w-full flex justify-start" key={`assistant-group-${groupIndex}`}>
+              <div className="w-full max-w-3xl lg:max-w-4xl sm:w-[90%] md:w-[85%]">
+                <Collapsible>
+                  <CollapsibleTrigger asChild>
+                    <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2 mb-2">
+                      <h4 className="text-sm font-medium text-muted-foreground">
+                        Response{toolNamesText}
+                      </h4>
+                      <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="bg-background rounded border p-3 mt-2">
+                      {assistantContent}
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              </div>
+            </li>
+          );
+        }
+
+        // Handle individual non-assistant conversations
+        const conversation = group as Conversation;
         const elm = (
           <ConversationItem
             key={getConversationKey(conversation)}

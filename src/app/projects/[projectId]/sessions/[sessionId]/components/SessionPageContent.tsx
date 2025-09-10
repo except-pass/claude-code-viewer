@@ -126,7 +126,7 @@ export const SessionPageContent: FC<{
                 variant="secondary"
                 className="h-6 sm:h-8 text-xs sm:text-sm flex items-center"
               >
-                {sessionId}
+                claude session: {sessionId}
               </Badge>
             </div>
 
