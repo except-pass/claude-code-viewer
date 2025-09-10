@@ -3,6 +3,7 @@ import { resolve } from "node:path";
 
 import { claudeProjectPath } from "../paths";
 import type { Project } from "../types";
+import { isWorktreeProject } from "../worktree/utils";
 import { getProjectMeta } from "./getProjectMeta";
 import { encodeProjectId } from "./id";
 
@@ -10,7 +11,7 @@ export const getProjects = async (): Promise<{ projects: Project[] }> => {
   const dirents = await readdir(claudeProjectPath, { withFileTypes: true });
   const projects = await Promise.all(
     dirents
-      .filter((d) => d.isDirectory())
+      .filter((d) => d.isDirectory() && !isWorktreeProject(d.name))
       .map(async (d) => {
         const fullPath = resolve(d.parentPath, d.name);
         const id = encodeProjectId(fullPath);

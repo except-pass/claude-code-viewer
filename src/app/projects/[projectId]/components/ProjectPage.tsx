@@ -25,10 +25,12 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { WorktreeBadge } from "@/components/ui/worktree-badge";
 import { useConfig } from "../../../hooks/useConfig";
 import { projectQueryConfig, useProject } from "../hooks/useProject";
 import { firstCommandToTitle } from "../services/firstCommandToTitle";
 import { NewChatModal } from "./newChat/NewChatModal";
+import { isWorktreeSession } from "@/lib/worktree";
 
 export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
   const {
@@ -153,6 +155,9 @@ export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
                           ? firstCommandToTitle(session.meta.firstCommand)
                           : session.id}
                       </span>
+                      {isWorktreeSession(session.jsonlFilePath) && (
+                        <WorktreeBadge />
+                      )}
                     </CardTitle>
                     <CardDescription className="font-mono text-xs">
                       {session.id}

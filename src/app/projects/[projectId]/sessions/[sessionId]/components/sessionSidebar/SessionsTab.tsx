@@ -8,12 +8,14 @@ import { useId } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { WorktreeBadge } from "@/components/ui/worktree-badge";
 import { cn } from "@/lib/utils";
 import type { Session } from "../../../../../../../server/service/types";
 import { NewChatModal } from "../../../../components/newChat/NewChatModal";
 import { firstCommandToTitle } from "../../../../services/firstCommandToTitle";
 import { aliveTasksAtom } from "../../store/aliveTasksAtom";
 import { showOldSessionsAtom } from "../../store/showOldSessionsAtom";
+import { isWorktreeSession } from "@/lib/worktree";
 
 export const SessionsTab: FC<{
   sessions: Session[];
@@ -129,9 +131,14 @@ export const SessionsTab: FC<{
             >
               <div className="space-y-1.5">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="text-sm font-medium line-clamp-2 leading-tight text-sidebar-foreground flex-1">
-                    {title}
-                  </h3>
+                  <div className="flex-1 space-y-1">
+                    <h3 className="text-sm font-medium line-clamp-2 leading-tight text-sidebar-foreground">
+                      {title}
+                    </h3>
+                    {isWorktreeSession(session.jsonlFilePath) && (
+                      <WorktreeBadge className="text-xs" />
+                    )}
+                  </div>
                   {(isRunning || isPaused) && (
                     <Badge
                       variant={isRunning ? "default" : "secondary"}

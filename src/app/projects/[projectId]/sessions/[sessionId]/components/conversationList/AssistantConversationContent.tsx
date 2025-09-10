@@ -253,7 +253,7 @@ export const AssistantConversationContent: FC<{
                 "edits" in content.input
               ) {
                 // Handle MultiEdit with multiple edits
-                const edits = content.input.edits as Array<{
+                const edits = (content.input as any).edits as Array<{
                   old_string: string;
                   new_string: string;
                 }>;
