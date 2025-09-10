@@ -371,8 +371,12 @@ export const routes = (app: HonoAppType) => {
         zValidator("json", z.object({ sessionId: z.string() })),
         async (c) => {
           const { sessionId } = c.req.valid("json");
-          taskController.abortTask(sessionId);
-          return c.json({ message: "Task aborted" });
+          const aborted = taskController.abortTask(sessionId);
+          return c.json({
+            message: aborted
+              ? "Task aborted"
+              : "No alive task for given session; nothing to abort",
+          });
         },
       )
 
@@ -381,25 +385,25 @@ export const routes = (app: HonoAppType) => {
         zValidator("json", z.object({ filePath: z.string() })),
         async (c) => {
           const { filePath } = c.req.valid("json");
-          
+
           try {
             return new Promise((resolve, reject) => {
               const childProcess = spawn("cursor", ["-a", filePath], {
                 stdio: "ignore",
                 detached: true,
               });
-              
+
               childProcess.on("error", (error) => {
                 console.error("Failed to start cursor:", error);
                 reject(c.json({ error: "Failed to start cursor" }, 500));
               });
-              
+
               childProcess.on("spawn", () => {
                 // Process started successfully, unref so it doesn't keep the parent alive
                 childProcess.unref();
                 resolve(c.json({ message: "File opened in cursor" }));
               });
-              
+
               // Timeout after 5 seconds
               setTimeout(() => {
                 if (!childProcess.killed) {

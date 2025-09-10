@@ -1,16 +1,19 @@
 "use client";
 
-import { useAtomValue } from "jotai";
+import { useAtom, useAtomValue } from "jotai";
 import { MessageSquareIcon, PlusIcon } from "lucide-react";
 import Link from "next/link";
 import type { FC } from "react";
+import { useId } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { cn } from "@/lib/utils";
 import type { Session } from "../../../../../../../server/service/types";
 import { NewChatModal } from "../../../../components/newChat/NewChatModal";
 import { firstCommandToTitle } from "../../../../services/firstCommandToTitle";
 import { aliveTasksAtom } from "../../store/aliveTasksAtom";
+import { showOldSessionsAtom } from "../../store/showOldSessionsAtom";
 
 export const SessionsTab: FC<{
   sessions: Session[];
@@ -18,9 +21,21 @@ export const SessionsTab: FC<{
   projectId: string;
 }> = ({ sessions, currentSessionId, projectId }) => {
   const aliveTasks = useAtomValue(aliveTasksAtom);
+  const [showOldSessions, setShowOldSessions] = useAtom(showOldSessionsAtom);
+  const checkboxId = useId();
+
+  // Filter sessions based on 24-hour cutoff if showOldSessions is false
+  const filteredSessions = showOldSessions
+    ? sessions
+    : sessions.filter((session) => {
+        if (!session.meta.lastModifiedAt) return false;
+        const sessionTime = new Date(session.meta.lastModifiedAt).getTime();
+        const cutoffTime = Date.now() - 24 * 60 * 60 * 1000; // 24 hours ago
+        return sessionTime > cutoffTime;
+      });
 
   // Sort sessions: Running > Paused > Others, then by lastModifiedAt (newest first)
-  const sortedSessions = [...sessions].sort((a, b) => {
+  const sortedSessions = [...filteredSessions].sort((a, b) => {
     const aTask = aliveTasks.find((task) => task.sessionId === a.id);
     const bTask = aliveTasks.find((task) => task.sessionId === b.id);
 
@@ -67,9 +82,23 @@ export const SessionsTab: FC<{
             }
           />
         </div>
-        <p className="text-xs text-sidebar-foreground/70">
-          {sessions.length} total
-        </p>
+        <div className="flex items-center justify-between text-xs text-sidebar-foreground/70">
+          <span>{sortedSessions.length} total</span>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id={checkboxId}
+              checked={showOldSessions}
+              onCheckedChange={(checked) => {
+                if (typeof checked === "boolean") {
+                  setShowOldSessions(checked);
+                }
+              }}
+            />
+            <label htmlFor={checkboxId} className="text-xs cursor-pointer">
+              Show Old Sessions
+            </label>
+          </div>
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
@@ -128,6 +157,7 @@ export const SessionsTab: FC<{
                         {
                           month: "short",
                           day: "numeric",
+                          timeZone: "UTC",
                         },
                       )}
                     </span>

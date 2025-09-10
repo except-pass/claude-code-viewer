@@ -180,12 +180,15 @@ const FileHeader: FC<FileHeaderProps> = ({
             {fileDiff.filename}
           </span>
           <Button
+            asChild
             onClick={handleCopyFilename}
             variant="ghost"
             size="sm"
             className="flex-shrink-0 p-1 h-6 w-6 hover:bg-gray-200 dark:hover:bg-gray-600"
           >
-            <CopyIcon className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+            <span role="button" aria-label="Copy filename">
+              <CopyIcon className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+            </span>
           </Button>
         </div>
       </div>

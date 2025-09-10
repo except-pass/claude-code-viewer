@@ -1,9 +1,9 @@
 import { ChevronRight, Edit, Lightbulb, Settings } from "lucide-react";
 import Image from "next/image";
+import parseGitDiff from "parse-git-diff";
 import type { FC } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
-import parseGitDiff from "parse-git-diff";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -20,7 +20,10 @@ import {
 } from "@/components/ui/collapsible";
 import type { ToolResultContent } from "@/lib/conversation-schema/content/ToolResultContentSchema";
 import type { AssistantMessageContent } from "@/lib/conversation-schema/message/AssistantMessageSchema";
-import { generateSyntheticGitDiff, generateMultiEditDiff } from "@/lib/synthetic-diff";
+import {
+  generateMultiEditDiff,
+  generateSyntheticGitDiff,
+} from "@/lib/synthetic-diff";
 import { MarkdownContent } from "../../../../../../components/MarkdownContent";
 import { DiffViewer } from "../diffModal/DiffViewer";
 import type { FileDiff } from "../diffModal/types";
@@ -28,19 +31,22 @@ import type { FileDiff } from "../diffModal/types";
 /**
  * Convert synthetic git diff to FileDiff format for DiffViewer
  */
-function convertSyntheticDiffToFileDiff(syntheticDiff: string, filePath: string): FileDiff | null {
+function convertSyntheticDiffToFileDiff(
+  syntheticDiff: string,
+  filePath: string,
+): FileDiff | null {
   try {
     const parsed = parseGitDiff(syntheticDiff);
-    
+
     if (parsed.files.length === 0) {
       return null;
     }
-    
+
     const file = parsed.files[0];
     if (!file) {
       return null;
     }
-    
+
     // Convert to FileDiff format
     const fileDiff: FileDiff = {
       filename: filePath,
@@ -51,54 +57,54 @@ function convertSyntheticDiffToFileDiff(syntheticDiff: string, filePath: string)
       isBinary: false,
       linesAdded: 0,
       linesDeleted: 0,
-      hunks: []
+      hunks: [],
     };
-    
+
     // Convert chunks to hunks
     for (const chunk of file.chunks) {
-      if (chunk.type !== 'Chunk') continue;
-      
-      const lines = chunk.changes.map(change => {
+      if (chunk.type !== "Chunk") continue;
+
+      const lines = chunk.changes.map((change) => {
         switch (change.type) {
-          case 'AddedLine':
+          case "AddedLine":
             fileDiff.linesAdded++;
             return {
-              type: 'added' as const,
+              type: "added" as const,
               content: change.content,
               newLineNumber: change.lineAfter,
             };
-          case 'DeletedLine':
+          case "DeletedLine":
             fileDiff.linesDeleted++;
             return {
-              type: 'deleted' as const,
+              type: "deleted" as const,
               content: change.content,
               oldLineNumber: change.lineBefore,
             };
-          case 'UnchangedLine':
+          case "UnchangedLine":
             return {
-              type: 'unchanged' as const,
+              type: "unchanged" as const,
               content: change.content,
               oldLineNumber: change.lineBefore,
               newLineNumber: change.lineAfter,
             };
           default:
             return {
-              type: 'unchanged' as const,
+              type: "unchanged" as const,
               content: change.content,
             };
         }
       });
-      
+
       fileDiff.hunks.push({
         oldStart: chunk.fromFileRange.start,
         newStart: chunk.toFileRange.start,
-        lines
+        lines,
       });
     }
-    
+
     return fileDiff;
   } catch (error) {
-    console.error('Failed to parse synthetic diff:', error);
+    console.error("Failed to parse synthetic diff:", error);
     return null;
   }
 }
@@ -142,30 +148,37 @@ export const AssistantConversationContent: FC<{
 
   if (content.type === "tool_use") {
     const toolResult = getToolResult(content.id);
-    
+
     // Check if this is an Edit or MultiEdit tool and extract file_path
     const isEditTool = content.name === "Edit" || content.name === "MultiEdit";
-    const filePath = isEditTool && content.input && typeof content.input === 'object' && 'file_path' in content.input 
-      ? (content.input as { file_path: string }).file_path 
-      : null;
-    
+    const filePath =
+      isEditTool &&
+      content.input &&
+      typeof content.input === "object" &&
+      "file_path" in content.input
+        ? (content.input as { file_path: string }).file_path
+        : null;
+
     const handleOpenInCursor = async () => {
       if (filePath) {
         try {
           // Execute cursor command as child process
-          const response = await fetch('/api/cursor-open', {
-            method: 'POST',
+          const response = await fetch("/api/cursor-open", {
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
+              "Content-Type": "application/json",
             },
             body: JSON.stringify({ filePath }),
           });
-          
+
           if (!response.ok) {
-            console.error('Failed to open file in Cursor:', await response.text());
+            console.error(
+              "Failed to open file in Cursor:",
+              await response.text(),
+            );
           }
         } catch (error) {
-          console.error('Error opening file in Cursor:', error);
+          console.error("Error opening file in Cursor:", error);
         }
       }
     };
@@ -182,13 +195,16 @@ export const AssistantConversationContent: FC<{
               className="h-auto p-2 text-blue-700 hover:text-blue-900 hover:bg-blue-100/50 dark:text-blue-300 dark:hover:text-blue-100 dark:hover:bg-blue-800/30"
             >
               <Edit className="h-3 w-3 mr-1" />
-              <span className="text-xs font-mono truncate max-w-[200px]" title={filePath}>
-                {filePath.split('/').pop() || filePath}
+              <span
+                className="text-xs font-mono truncate max-w-[200px]"
+                title={filePath}
+              >
+                {filePath.split("/").pop() || filePath}
               </span>
             </Button>
           </div>
         )}
-        
+
         <CardHeader className="py-0 px-4">
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -223,46 +239,71 @@ export const AssistantConversationContent: FC<{
               </SyntaxHighlighter>
             </CollapsibleContent>
           </Collapsible>
-          
+
           {/* File Diff section for Edit/MultiEdit tools */}
-          {isEditTool && filePath && (() => {
-            let syntheticDiff: string;
-            
-            if (content.name === "MultiEdit" && content.input && typeof content.input === 'object' && 'edits' in content.input) {
-              // Handle MultiEdit with multiple edits
-              const edits = content.input['edits'] as Array<{ old_string: string; new_string: string }>;
-              syntheticDiff = generateMultiEditDiff(filePath, edits);
-            } else if (content.input && typeof content.input === 'object' && 'old_string' in content.input && 'new_string' in content.input) {
-              // Handle single Edit
-              const { old_string, new_string } = content.input as { old_string: string; new_string: string };
-              syntheticDiff = generateSyntheticGitDiff(filePath, old_string, new_string);
-            } else {
-              return null;
-            }
-            
-            const fileDiff = convertSyntheticDiffToFileDiff(syntheticDiff, filePath);
-            
-            if (!fileDiff) {
-              return null;
-            }
-            
-            return (
-              <Collapsible defaultOpen={true}>
-                <CollapsibleTrigger className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2 w-full bg-transparent border-none">
-                  <h4 className="text-xs font-medium text-muted-foreground">
-                    File Diff
-                  </h4>
-                  <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
-                </CollapsibleTrigger>
-                <CollapsibleContent>
-                  <div className="mt-2">
-                    <DiffViewer fileDiff={fileDiff} />
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            );
-          })()}
-          
+          {isEditTool &&
+            filePath &&
+            (() => {
+              let syntheticDiff: string;
+
+              if (
+                content.name === "MultiEdit" &&
+                content.input &&
+                typeof content.input === "object" &&
+                "edits" in content.input
+              ) {
+                // Handle MultiEdit with multiple edits
+                const edits = content.input.edits as Array<{
+                  old_string: string;
+                  new_string: string;
+                }>;
+                syntheticDiff = generateMultiEditDiff(filePath, edits);
+              } else if (
+                content.input &&
+                typeof content.input === "object" &&
+                "old_string" in content.input &&
+                "new_string" in content.input
+              ) {
+                // Handle single Edit
+                const { old_string, new_string } = content.input as {
+                  old_string: string;
+                  new_string: string;
+                };
+                syntheticDiff = generateSyntheticGitDiff(
+                  filePath,
+                  old_string,
+                  new_string,
+                );
+              } else {
+                return null;
+              }
+
+              const fileDiff = convertSyntheticDiffToFileDiff(
+                syntheticDiff,
+                filePath,
+              );
+
+              if (!fileDiff) {
+                return null;
+              }
+
+              return (
+                <Collapsible defaultOpen={true}>
+                  <CollapsibleTrigger className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2 w-full bg-transparent border-none">
+                    <h4 className="text-xs font-medium text-muted-foreground">
+                      File Diff
+                    </h4>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <div className="mt-2">
+                      <DiffViewer fileDiff={fileDiff} />
+                    </div>
+                  </CollapsibleContent>
+                </Collapsible>
+              );
+            })()}
+
           {toolResult && (
             <Collapsible defaultOpen={false}>
               <CollapsibleTrigger className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2 w-full bg-transparent border-none">

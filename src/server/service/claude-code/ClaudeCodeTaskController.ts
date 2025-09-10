@@ -206,10 +206,10 @@ export class ClaudeCodeTaskController {
     return aliveTaskPromise;
   }
 
-  public abortTask(sessionId: string) {
+  public abortTask(sessionId: string): boolean {
     const task = this.aliveTasks.find((task) => task.sessionId === sessionId);
     if (!task) {
-      throw new Error("Alive Task not found");
+      return false;
     }
 
     task.abortController.abort();
@@ -228,6 +228,8 @@ export class ClaudeCodeTaskController {
       baseSessionId: task.baseSessionId,
       userMessageId: task.userMessageId,
     });
+
+    return true;
   }
 
   private updateExistingTask(task: ClaudeCodeTask) {

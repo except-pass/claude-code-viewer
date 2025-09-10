@@ -8,6 +8,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { StatusDot } from "@/components/ui/status-dot";
 import type { Conversation } from "@/lib/conversation-schema";
 import type { ToolResultContent } from "@/lib/conversation-schema/content/ToolResultContentSchema";
 import type { ErrorJsonl } from "../../../../../../../server/service/types";
@@ -112,7 +113,11 @@ export const ConversationList: FC<ConversationListProps> = ({
   // Group conversations: each user message followed by all responses until the next user message
   // This ensures only one "Full output" section per user prompt
   const groupedConversations = useMemo(() => {
-    const groups: (Conversation | ErrorJsonl | { type: 'assistant-group', conversations: Conversation[] })[] = [];
+    const groups: (
+      | Conversation
+      | ErrorJsonl
+      | { type: "assistant-group"; conversations: Conversation[] }
+    )[] = [];
     let currentAssistantGroup: Conversation[] = [];
     let hasSeenUserMessage = false;
 
@@ -120,7 +125,10 @@ export const ConversationList: FC<ConversationListProps> = ({
       if (conversation.type === "x-error") {
         // Flush any pending assistant group only if we have content
         if (currentAssistantGroup.length > 0 && hasSeenUserMessage) {
-          groups.push({ type: 'assistant-group', conversations: [...currentAssistantGroup] });
+          groups.push({
+            type: "assistant-group",
+            conversations: [...currentAssistantGroup],
+          });
           currentAssistantGroup = [];
           hasSeenUserMessage = false;
         }
@@ -128,7 +136,10 @@ export const ConversationList: FC<ConversationListProps> = ({
       } else if (conversation.type === "user") {
         // User message always flushes assistant group if we have responses
         if (currentAssistantGroup.length > 0 && hasSeenUserMessage) {
-          groups.push({ type: 'assistant-group', conversations: [...currentAssistantGroup] });
+          groups.push({
+            type: "assistant-group",
+            conversations: [...currentAssistantGroup],
+          });
           currentAssistantGroup = [];
         }
         groups.push(conversation);
@@ -147,7 +158,10 @@ export const ConversationList: FC<ConversationListProps> = ({
 
     // Flush final assistant group if any and we have seen a user message
     if (currentAssistantGroup.length > 0 && hasSeenUserMessage) {
-      groups.push({ type: 'assistant-group', conversations: [...currentAssistantGroup] });
+      groups.push({
+        type: "assistant-group",
+        conversations: [...currentAssistantGroup],
+      });
     }
 
     return groups;
@@ -175,13 +189,17 @@ export const ConversationList: FC<ConversationListProps> = ({
         }
 
         if (group.type === "assistant-group") {
-          // Extract tool names from all conversations in the group
+          // Extract tool names and determine status from all conversations in the group
           const toolNames = new Set<string>();
           let shouldExpand = false;
-          group.conversations.forEach(conversation => {
+          let hasToolUse = false;
+          let hasErrors = false;
+          
+          group.conversations.forEach((conversation) => {
             if (conversation.type === "assistant") {
-              conversation.message.content.forEach(content => {
+              conversation.message.content.forEach((content) => {
                 if (content.type === "tool_use") {
+                  hasToolUse = true;
                   toolNames.add(content.name);
                   // Auto-expand the Response group if this is an edit-related tool
                   if (content.name === "Edit" || content.name === "MultiEdit") {
@@ -190,12 +208,43 @@ export const ConversationList: FC<ConversationListProps> = ({
                 }
               });
             }
+            
+            // Check for tool result errors in any conversation type
+            if ("message" in conversation && conversation.message.content) {
+              const content = Array.isArray(conversation.message.content) 
+                ? conversation.message.content 
+                : [conversation.message.content];
+              
+              content.forEach((item) => {
+                if (typeof item === "object" && item !== null && "type" in item && item.type === "tool_result") {
+                  if ("is_error" in item && item.is_error) {
+                    hasErrors = true;
+                  }
+                }
+              });
+            }
+            
+            // Check for interruption in toolUseResult (from JSONL format)
+            if (typeof conversation === "object" && "toolUseResult" in conversation && conversation.toolUseResult) {
+              if (typeof conversation.toolUseResult === "object" && conversation.toolUseResult !== null && "interrupted" in conversation.toolUseResult && conversation.toolUseResult.interrupted) {
+                hasErrors = true;
+              }
+            }
           });
           // If this is the last assistant-group in the list, expand it by default
           const isLastAssistantGroup = groupIndex === lastAssistantGroupIndex;
+
+          const toolNamesText =
+            toolNames.size > 0 ? ` (${Array.from(toolNames).join(", ")})` : "";
           
-          const toolNamesText = toolNames.size > 0 ? ` (${Array.from(toolNames).join(", ")})` : "";
-          
+          // Determine status dot
+          const statusDot = hasToolUse ? (
+            <StatusDot 
+              status={hasErrors ? "error" : "success"} 
+              className="mr-2" 
+            />
+          ) : null;
+
           // Render grouped assistant messages in a collapsible
           const assistantContent = (
             <ul className="w-full">
@@ -213,14 +262,20 @@ export const ConversationList: FC<ConversationListProps> = ({
           );
 
           return (
-            <li className="w-full flex justify-start" key={`assistant-group-${groupIndex}`}>
+            <li
+              className="w-full flex justify-start"
+              key={`assistant-group-${groupIndex}`}
+            >
               <div className="w-full max-w-3xl lg:max-w-4xl sm:w-[90%] md:w-[85%]">
                 <Collapsible defaultOpen={shouldExpand || isLastAssistantGroup}>
                   <CollapsibleTrigger asChild>
                     <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2 mb-2">
-                      <h4 className="text-sm font-medium text-muted-foreground">
-                        Response{toolNamesText}
-                      </h4>
+                      <div className="flex items-center">
+                        {statusDot}
+                        <h4 className="text-sm font-medium text-muted-foreground">
+                          Response{toolNamesText}
+                        </h4>
+                      </div>
                       <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
                     </div>
                   </CollapsibleTrigger>

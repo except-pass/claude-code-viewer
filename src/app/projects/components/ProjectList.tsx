@@ -48,7 +48,10 @@ export const ProjectList: FC = () => {
             <p className="text-sm text-muted-foreground">
               Last modified:{" "}
               {project.meta.lastModifiedAt
-                ? new Date(project.meta.lastModifiedAt).toLocaleDateString()
+                ? new Date(project.meta.lastModifiedAt).toLocaleDateString(
+                    "en-US",
+                    { timeZone: "UTC" },
+                  )
                 : ""}
             </p>
             <p className="text-xs text-muted-foreground">
