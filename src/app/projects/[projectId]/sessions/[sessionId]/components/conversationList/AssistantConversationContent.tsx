@@ -3,6 +3,7 @@ import Image from "next/image";
 import type { FC } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
+import parseGitDiff from "parse-git-diff";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -19,7 +20,88 @@ import {
 } from "@/components/ui/collapsible";
 import type { ToolResultContent } from "@/lib/conversation-schema/content/ToolResultContentSchema";
 import type { AssistantMessageContent } from "@/lib/conversation-schema/message/AssistantMessageSchema";
+import { generateSyntheticGitDiff, generateMultiEditDiff } from "@/lib/synthetic-diff";
 import { MarkdownContent } from "../../../../../../components/MarkdownContent";
+import { DiffViewer } from "../diffModal/DiffViewer";
+import type { FileDiff } from "../diffModal/types";
+
+/**
+ * Convert synthetic git diff to FileDiff format for DiffViewer
+ */
+function convertSyntheticDiffToFileDiff(syntheticDiff: string, filePath: string): FileDiff | null {
+  try {
+    const parsed = parseGitDiff(syntheticDiff);
+    
+    if (parsed.files.length === 0) {
+      return null;
+    }
+    
+    const file = parsed.files[0];
+    if (!file) {
+      return null;
+    }
+    
+    // Convert to FileDiff format
+    const fileDiff: FileDiff = {
+      filename: filePath,
+      oldFilename: undefined,
+      isNew: false,
+      isDeleted: false,
+      isRenamed: false,
+      isBinary: false,
+      linesAdded: 0,
+      linesDeleted: 0,
+      hunks: []
+    };
+    
+    // Convert chunks to hunks
+    for (const chunk of file.chunks) {
+      if (chunk.type !== 'Chunk') continue;
+      
+      const lines = chunk.changes.map(change => {
+        switch (change.type) {
+          case 'AddedLine':
+            fileDiff.linesAdded++;
+            return {
+              type: 'added' as const,
+              content: change.content,
+              newLineNumber: change.lineAfter,
+            };
+          case 'DeletedLine':
+            fileDiff.linesDeleted++;
+            return {
+              type: 'deleted' as const,
+              content: change.content,
+              oldLineNumber: change.lineBefore,
+            };
+          case 'UnchangedLine':
+            return {
+              type: 'unchanged' as const,
+              content: change.content,
+              oldLineNumber: change.lineBefore,
+              newLineNumber: change.lineAfter,
+            };
+          default:
+            return {
+              type: 'unchanged' as const,
+              content: change.content,
+            };
+        }
+      });
+      
+      fileDiff.hunks.push({
+        oldStart: chunk.fromFileRange.start,
+        newStart: chunk.toFileRange.start,
+        lines
+      });
+    }
+    
+    return fileDiff;
+  } catch (error) {
+    console.error('Failed to parse synthetic diff:', error);
+    return null;
+  }
+}
 
 export const AssistantConversationContent: FC<{
   content: AssistantMessageContent;
@@ -143,6 +225,48 @@ export const AssistantConversationContent: FC<{
               </SyntaxHighlighter>
             </CollapsibleContent>
           </Collapsible>
+          
+          {/* File Diff section for Edit/MultiEdit tools */}
+          {isEditTool && filePath && (() => {
+            let syntheticDiff: string;
+            
+            if (content.name === "MultiEdit" && content.input && typeof content.input === 'object' && 'edits' in content.input) {
+              // Handle MultiEdit with multiple edits
+              const edits = content.input['edits'] as Array<{ old_string: string; new_string: string }>;
+              syntheticDiff = generateMultiEditDiff(filePath, edits);
+            } else if (content.input && typeof content.input === 'object' && 'old_string' in content.input && 'new_string' in content.input) {
+              // Handle single Edit
+              const { old_string, new_string } = content.input as { old_string: string; new_string: string };
+              syntheticDiff = generateSyntheticGitDiff(filePath, old_string, new_string);
+            } else {
+              return null;
+            }
+            
+            const fileDiff = convertSyntheticDiffToFileDiff(syntheticDiff, filePath);
+            
+            if (!fileDiff) {
+              return null;
+            }
+            
+            return (
+              <Collapsible defaultOpen={true}>
+                <CollapsibleTrigger asChild>
+                  <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2">
+                    <h4 className="text-xs font-medium text-muted-foreground">
+                      File Diff
+                    </h4>
+                    <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
+                  </div>
+                </CollapsibleTrigger>
+                <CollapsibleContent>
+                  <div className="mt-2">
+                    <DiffViewer fileDiff={fileDiff} />
+                  </div>
+                </CollapsibleContent>
+              </Collapsible>
+            );
+          })()}
+          
           {toolResult && (
             <Collapsible defaultOpen={false}>
               <CollapsibleTrigger asChild>

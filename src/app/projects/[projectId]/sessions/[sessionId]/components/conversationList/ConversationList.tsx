@@ -153,6 +153,15 @@ export const ConversationList: FC<ConversationListProps> = ({
     return groups;
   }, [conversations]);
 
+  // Identify the last assistant-group index to expand it by default
+  const lastAssistantGroupIndex = useMemo(() => {
+    for (let i = groupedConversations.length - 1; i >= 0; i--) {
+      const g = groupedConversations[i] as any;
+      if (g && g.type === "assistant-group") return i;
+    }
+    return -1;
+  }, [groupedConversations]);
+
   return (
     <ul>
       {groupedConversations.flatMap((group, groupIndex) => {
@@ -182,6 +191,8 @@ export const ConversationList: FC<ConversationListProps> = ({
               });
             }
           });
+          // If this is the last assistant-group in the list, expand it by default
+          const isLastAssistantGroup = groupIndex === lastAssistantGroupIndex;
           
           const toolNamesText = toolNames.size > 0 ? ` (${Array.from(toolNames).join(", ")})` : "";
           
@@ -204,7 +215,7 @@ export const ConversationList: FC<ConversationListProps> = ({
           return (
             <li className="w-full flex justify-start" key={`assistant-group-${groupIndex}`}>
               <div className="w-full max-w-3xl lg:max-w-4xl sm:w-[90%] md:w-[85%]">
-                <Collapsible defaultOpen={shouldExpand}>
+                <Collapsible defaultOpen={shouldExpand || isLastAssistantGroup}>
                   <CollapsibleTrigger asChild>
                     <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2 mb-2">
                       <h4 className="text-sm font-medium text-muted-foreground">
