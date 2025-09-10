@@ -206,13 +206,11 @@ export const AssistantConversationContent: FC<{
         </CardHeader>
         <CardContent className="space-y-2 py-0 px-4">
           <Collapsible defaultOpen={false}>
-            <CollapsibleTrigger asChild>
-              <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2">
-                <h4 className="text-xs font-medium text-muted-foreground">
-                  Input Parameters
-                </h4>
-                <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
-              </div>
+            <CollapsibleTrigger className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2 w-full bg-transparent border-none">
+              <h4 className="text-xs font-medium text-muted-foreground">
+                Input Parameters
+              </h4>
+              <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
             </CollapsibleTrigger>
             <CollapsibleContent>
               <SyntaxHighlighter
@@ -250,13 +248,11 @@ export const AssistantConversationContent: FC<{
             
             return (
               <Collapsible defaultOpen={true}>
-                <CollapsibleTrigger asChild>
-                  <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2">
-                    <h4 className="text-xs font-medium text-muted-foreground">
-                      File Diff
-                    </h4>
-                    <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
-                  </div>
+                <CollapsibleTrigger className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2 w-full bg-transparent border-none">
+                  <h4 className="text-xs font-medium text-muted-foreground">
+                    File Diff
+                  </h4>
+                  <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
                 </CollapsibleTrigger>
                 <CollapsibleContent>
                   <div className="mt-2">
@@ -269,13 +265,11 @@ export const AssistantConversationContent: FC<{
           
           {toolResult && (
             <Collapsible defaultOpen={false}>
-              <CollapsibleTrigger asChild>
-                <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2">
-                  <h4 className="text-xs font-medium text-muted-foreground">
-                    Tool Result
-                  </h4>
-                  <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
-                </div>
+              <CollapsibleTrigger className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2 w-full bg-transparent border-none">
+                <h4 className="text-xs font-medium text-muted-foreground">
+                  Tool Result
+                </h4>
+                <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
               </CollapsibleTrigger>
               <CollapsibleContent>
                 <div className="bg-background rounded border p-2 mt-1">
