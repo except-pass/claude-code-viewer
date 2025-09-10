@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertTriangle, ChevronDown, ExternalLink } from "lucide-react";
+import { AlertTriangle, ChevronRight, ExternalLink } from "lucide-react";
 import { type FC, useMemo } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
@@ -47,7 +47,7 @@ const SchemaErrorDisplay: FC<{ errorLine: string }> = ({ errorLine }) => {
                   Schema Error
                 </span>
               </div>
-              <ChevronDown className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+              <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
             </div>
           </CollapsibleTrigger>
           <CollapsibleContent>
@@ -168,11 +168,16 @@ export const ConversationList: FC<ConversationListProps> = ({
         if (group.type === "assistant-group") {
           // Extract tool names from all conversations in the group
           const toolNames = new Set<string>();
+          let shouldExpand = false;
           group.conversations.forEach(conversation => {
             if (conversation.type === "assistant") {
               conversation.message.content.forEach(content => {
                 if (content.type === "tool_use") {
                   toolNames.add(content.name);
+                  // Auto-expand the Response group if this is an edit-related tool
+                  if (content.name === "Edit" || content.name === "MultiEdit") {
+                    shouldExpand = true;
+                  }
                 }
               });
             }
@@ -199,13 +204,13 @@ export const ConversationList: FC<ConversationListProps> = ({
           return (
             <li className="w-full flex justify-start" key={`assistant-group-${groupIndex}`}>
               <div className="w-full max-w-3xl lg:max-w-4xl sm:w-[90%] md:w-[85%]">
-                <Collapsible>
+                <Collapsible defaultOpen={shouldExpand}>
                   <CollapsibleTrigger asChild>
                     <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2 mb-2">
                       <h4 className="text-sm font-medium text-muted-foreground">
                         Response{toolNamesText}
                       </h4>
-                      <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                      <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>

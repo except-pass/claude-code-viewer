@@ -1,4 +1,4 @@
-import { ChevronDown } from "lucide-react";
+import { ChevronRight } from "lucide-react";
 import type { FC, PropsWithChildren } from "react";
 import {
   Collapsible,
@@ -16,7 +16,7 @@ export const SummaryConversationContent: FC<PropsWithChildren> = ({
           <h4 className="text-xs font-medium text-muted-foreground">
             Summarized
           </h4>
-          <ChevronDown className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+          <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
         </div>
       </CollapsibleTrigger>
       <CollapsibleContent>

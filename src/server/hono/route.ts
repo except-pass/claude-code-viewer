@@ -1,3 +1,4 @@
+import { spawn } from "node:child_process";
 import { readdir } from "node:fs/promises";
 import { homedir } from "node:os";
 import { resolve } from "node:path";
@@ -372,6 +373,45 @@ export const routes = (app: HonoAppType) => {
           const { sessionId } = c.req.valid("json");
           taskController.abortTask(sessionId);
           return c.json({ message: "Task aborted" });
+        },
+      )
+
+      .post(
+        "/cursor-open",
+        zValidator("json", z.object({ filePath: z.string() })),
+        async (c) => {
+          const { filePath } = c.req.valid("json");
+          
+          try {
+            return new Promise((resolve, reject) => {
+              const childProcess = spawn("cursor", ["-a", filePath], {
+                stdio: "ignore",
+                detached: true,
+              });
+              
+              childProcess.on("error", (error) => {
+                console.error("Failed to start cursor:", error);
+                reject(c.json({ error: "Failed to start cursor" }, 500));
+              });
+              
+              childProcess.on("spawn", () => {
+                // Process started successfully, unref so it doesn't keep the parent alive
+                childProcess.unref();
+                resolve(c.json({ message: "File opened in cursor" }));
+              });
+              
+              // Timeout after 5 seconds
+              setTimeout(() => {
+                if (!childProcess.killed) {
+                  childProcess.kill();
+                  reject(c.json({ error: "Cursor command timed out" }, 500));
+                }
+              }, 5000);
+            });
+          } catch (error) {
+            console.error("Error executing cursor command:", error);
+            return c.json({ error: "Failed to execute cursor command" }, 500);
+          }
         },
       )
 

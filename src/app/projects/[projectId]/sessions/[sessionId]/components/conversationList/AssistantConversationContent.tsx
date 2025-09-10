@@ -1,9 +1,10 @@
-import { ChevronDown, Lightbulb, Settings } from "lucide-react";
+import { ChevronRight, Edit, Lightbulb, Settings } from "lucide-react";
 import Image from "next/image";
 import type { FC } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -19,17 +20,6 @@ import {
 import type { ToolResultContent } from "@/lib/conversation-schema/content/ToolResultContentSchema";
 import type { AssistantMessageContent } from "@/lib/conversation-schema/message/AssistantMessageSchema";
 import { MarkdownContent } from "../../../../../../components/MarkdownContent";
-
-const shouldExpandTool = (toolName: string) => {
-  // Check for various edit-related tool names
-  const editToolNames = [
-    "Edit", "edit", 
-    "str_replace_editor", "str_replace_based_edit_tool",
-    "write_to_file", "create_file", "modify_file",
-    "file_editor", "text_editor"
-  ];
-  return editToolNames.includes(toolName);
-};
 
 export const AssistantConversationContent: FC<{
   content: AssistantMessageContent;
@@ -52,7 +42,7 @@ export const AssistantConversationContent: FC<{
               <div className="flex items-center gap-2">
                 <Lightbulb className="h-4 w-4 text-muted-foreground" />
                 <CardTitle className="text-sm font-medium">Thinking</CardTitle>
-                <ChevronDown className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
               </div>
             </CardHeader>
           </CollapsibleTrigger>
@@ -70,9 +60,53 @@ export const AssistantConversationContent: FC<{
 
   if (content.type === "tool_use") {
     const toolResult = getToolResult(content.id);
+    
+    // Check if this is an Edit or MultiEdit tool and extract file_path
+    const isEditTool = content.name === "Edit" || content.name === "MultiEdit";
+    const filePath = isEditTool && content.input && typeof content.input === 'object' && 'file_path' in content.input 
+      ? (content.input as { file_path: string }).file_path 
+      : null;
+    
+    const handleOpenInCursor = async () => {
+      if (filePath) {
+        try {
+          // Execute cursor command as child process
+          const response = await fetch('/api/cursor-open', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ filePath }),
+          });
+          
+          if (!response.ok) {
+            console.error('Failed to open file in Cursor:', await response.text());
+          }
+        } catch (error) {
+          console.error('Error opening file in Cursor:', error);
+        }
+      }
+    };
 
     return (
       <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20 gap-2 py-3 mb-2">
+        {/* Edit button for Edit/MultiEdit tools */}
+        {isEditTool && filePath && (
+          <div className="px-4 pt-3 pb-2 border-b border-blue-200/50">
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={handleOpenInCursor}
+              className="h-auto p-2 text-blue-700 hover:text-blue-900 hover:bg-blue-100/50 dark:text-blue-300 dark:hover:text-blue-100 dark:hover:bg-blue-800/30"
+            >
+              <Edit className="h-3 w-3 mr-1" />
+              <span className="text-xs font-mono truncate max-w-[200px]" title={filePath}>
+                {filePath.split('/').pop() || filePath}
+              </span>
+            </Button>
+          </div>
+        )}
+        
         <CardHeader className="py-0 px-4">
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -89,13 +123,13 @@ export const AssistantConversationContent: FC<{
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2 py-0 px-4">
-          <Collapsible defaultOpen={shouldExpandTool(content.name)}>
+          <Collapsible defaultOpen={false}>
             <CollapsibleTrigger asChild>
               <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2">
                 <h4 className="text-xs font-medium text-muted-foreground">
                   Input Parameters
                 </h4>
-                <ChevronDown className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
               </div>
             </CollapsibleTrigger>
             <CollapsibleContent>
@@ -110,13 +144,13 @@ export const AssistantConversationContent: FC<{
             </CollapsibleContent>
           </Collapsible>
           {toolResult && (
-            <Collapsible defaultOpen={shouldExpandTool(content.name)}>
+            <Collapsible defaultOpen={false}>
               <CollapsibleTrigger asChild>
                 <div className="flex items-center justify-between cursor-pointer hover:bg-muted/50 rounded p-2 -mx-2">
                   <h4 className="text-xs font-medium text-muted-foreground">
                     Tool Result
                   </h4>
-                  <ChevronDown className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-180" />
+                  <ChevronRight className="h-3 w-3 text-muted-foreground transition-transform group-data-[state=open]:rotate-90" />
                 </div>
               </CollapsibleTrigger>
               <CollapsibleContent>

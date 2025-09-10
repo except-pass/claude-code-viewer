@@ -17,7 +17,7 @@ export const NewChat: FC<{
       onSubmit={handleSubmit}
       isPending={startNewChat.isPending}
       error={startNewChat.error}
-      placeholder="Type your message here... (Start with / for commands, @ for files, Shift+Enter to send)"
+      placeholder="Type your message here... (Start with / for commands, @ for files, Ctrl+Enter to send)"
       buttonText="Start Chat"
       minHeight="min-h-[200px]"
       containerClassName="space-y-4"

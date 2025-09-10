@@ -58,7 +58,7 @@ export const ChatInput: FC<ChatInputProps> = ({
       return;
     }
 
-    if (e.key === "Enter" && e.shiftKey) {
+    if (e.key === "Enter" && (e.shiftKey || e.ctrlKey)) {
       e.preventDefault();
       handleSubmit();
     }
@@ -185,8 +185,8 @@ export const ChatInput: FC<ChatInputProps> = ({
 
         <div className="flex items-center justify-between">
           <span className="text-xs text-muted-foreground" id={helpId}>
-            {message.length}/4000 characters " • Use arrow keys to navigate
-            completions"
+            {message.length}/4000 characters • Use arrow keys to navigate
+            completions • Ctrl+Enter to send
           </span>
 
           <Button

@@ -30,7 +30,7 @@ export const ResumeChat: FC<{
         onSubmit={handleSubmit}
         isPending={resumeChat.isPending}
         error={resumeChat.error}
-        placeholder="Type your message... (Start with / for commands, Shift+Enter to send)"
+        placeholder="Type your message... (Start with / for commands, Ctrl+Enter to send)"
         buttonText={getButtonText()}
         minHeight="min-h-[100px]"
         containerClassName="space-y-2"

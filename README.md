@@ -114,10 +114,7 @@ PORT=8080 npx @kimuson/claude-code-viewer@latest
 
 The application automatically detects the standard Claude Code directory at `~/.claude/projects/`. No additional configuration is required.
 
-## License
-
-This project is available under the MIT License.
 
 ## Contributing
 
-See [docs/dev.md](docs/dev.md) for detailed development setup and contribution guidelines.
+This is a fork of a cool project.  You should contribute to the original. https://github.com/d-kimuson/claude-code-viewer
