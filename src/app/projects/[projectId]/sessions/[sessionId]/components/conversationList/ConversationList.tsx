@@ -194,7 +194,7 @@ export const ConversationList: FC<ConversationListProps> = ({
           let shouldExpand = false;
           let hasToolUse = false;
           let hasErrors = false;
-          
+
           group.conversations.forEach((conversation) => {
             if (conversation.type === "assistant") {
               conversation.message.content.forEach((content) => {
@@ -208,25 +208,39 @@ export const ConversationList: FC<ConversationListProps> = ({
                 }
               });
             }
-            
+
             // Check for tool result errors in any conversation type
             if ("message" in conversation && conversation.message.content) {
-              const content = Array.isArray(conversation.message.content) 
-                ? conversation.message.content 
+              const content = Array.isArray(conversation.message.content)
+                ? conversation.message.content
                 : [conversation.message.content];
-              
+
               content.forEach((item) => {
-                if (typeof item === "object" && item !== null && "type" in item && item.type === "tool_result") {
+                if (
+                  typeof item === "object" &&
+                  item !== null &&
+                  "type" in item &&
+                  item.type === "tool_result"
+                ) {
                   if ("is_error" in item && item.is_error) {
                     hasErrors = true;
                   }
                 }
               });
             }
-            
+
             // Check for interruption in toolUseResult (from JSONL format)
-            if (typeof conversation === "object" && "toolUseResult" in conversation && conversation.toolUseResult) {
-              if (typeof conversation.toolUseResult === "object" && conversation.toolUseResult !== null && "interrupted" in conversation.toolUseResult && conversation.toolUseResult.interrupted) {
+            if (
+              typeof conversation === "object" &&
+              "toolUseResult" in conversation &&
+              conversation.toolUseResult
+            ) {
+              if (
+                typeof conversation.toolUseResult === "object" &&
+                conversation.toolUseResult !== null &&
+                "interrupted" in conversation.toolUseResult &&
+                conversation.toolUseResult.interrupted
+              ) {
                 hasErrors = true;
               }
             }
@@ -236,12 +250,12 @@ export const ConversationList: FC<ConversationListProps> = ({
 
           const toolNamesText =
             toolNames.size > 0 ? ` (${Array.from(toolNames).join(", ")})` : "";
-          
+
           // Determine status dot
           const statusDot = hasToolUse ? (
-            <StatusDot 
-              status={hasErrors ? "error" : "success"} 
-              className="mr-2" 
+            <StatusDot
+              status={hasErrors ? "error" : "success"}
+              className="mr-2"
             />
           ) : null;
 
