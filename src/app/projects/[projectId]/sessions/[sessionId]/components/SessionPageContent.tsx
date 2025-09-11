@@ -16,6 +16,12 @@ import { Button } from "@/components/ui/button";
 import { useTaskNotifications } from "@/hooks/useTaskNotifications";
 import { Badge } from "../../../../../../components/ui/badge";
 import { honoClient } from "../../../../../../lib/api/client";
+import { cn } from "@/lib/utils";
+import {
+  extractWorktreeUuid,
+  isWorktreeSession,
+} from "../../../../../../lib/worktree-utils";
+import { WorktreeBadge } from "../../../../../../components/ui/worktree-badge";
 import { useProject } from "../../../hooks/useProject";
 import { firstCommandToTitle } from "../../../services/firstCommandToTitle";
 import { useAliveTask } from "../hooks/useAliveTask";
@@ -59,6 +65,48 @@ export const SessionPageContent: FC<{
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isDiffModalOpen, setIsDiffModalOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [previousSessionId, setPreviousSessionId] = useState(sessionId);
+  const hasAutoScrolledRef = useRef(false);
+
+  // Reset one-time auto-scroll flag when session changes
+  useEffect(() => {
+    hasAutoScrolledRef.current = false;
+  }, []);
+
+  // Auto-scroll when switching to a new session (route param change within same component instance)
+  useEffect(() => {
+    if (previousSessionId !== sessionId) {
+      setPreviousSessionId(sessionId);
+      const scrollContainer = scrollContainerRef.current;
+      if (scrollContainer) {
+        // Use setTimeout to ensure the content is fully rendered before scrolling
+        setTimeout(() => {
+          scrollContainer.scrollTo({
+            top: scrollContainer.scrollHeight,
+            behavior: "auto",
+          });
+          hasAutoScrolledRef.current = true;
+        }, 0);
+      }
+    }
+  }, [sessionId, previousSessionId]);
+
+  // Auto-scroll on initial mount after conversations render (covers remounts on navigation)
+  useEffect(() => {
+    if (hasAutoScrolledRef.current) return;
+    if (conversations.length === 0) return;
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+    // Next tick to ensure layout is complete
+    const id = setTimeout(() => {
+      scrollContainer.scrollTo({
+        top: scrollContainer.scrollHeight,
+        behavior: "auto",
+      });
+      hasAutoScrolledRef.current = true;
+    }, 0);
+    return () => clearTimeout(id);
+  }, [conversations.length]);
 
   // 自動スクロール処理
   useEffect(() => {
@@ -128,6 +176,13 @@ export const SessionPageContent: FC<{
               >
                 claude session: {sessionId}
               </Badge>
+              {isWorktreeSession(session.jsonlFilePath) && (
+                <WorktreeBadge
+                  className="h-6 sm:h-8 text-xs sm:text-sm"
+                  isDirty={session.meta.isDirty}
+                  isOrphaned={session.meta.isOrphaned}
+                />
+              )}
             </div>
 
             {isRunningTask && (
@@ -206,6 +261,7 @@ export const SessionPageContent: FC<{
               sessionId={sessionId}
               isPausedTask={isPausedTask}
               isRunningTask={isRunningTask}
+              isOrphaned={session.meta.isOrphaned}
             />
           </main>
         </div>
@@ -214,8 +270,14 @@ export const SessionPageContent: FC<{
       {/* Fixed Diff Button */}
       <Button
         onClick={() => setIsDiffModalOpen(true)}
+        disabled={session.meta.isOrphaned}
         className="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 z-50"
         size="lg"
+        title={
+          session.meta.isOrphaned
+            ? "Worktree directory has been removed. Git operations are disabled for this session."
+            : "Show git diff"
+        }
       >
         <GitCompareIcon className="w-6 h-6" />
       </Button>
@@ -223,6 +285,7 @@ export const SessionPageContent: FC<{
       {/* Diff Modal */}
       <DiffModal
         projectId={projectId}
+        sessionId={sessionId}
         isOpen={isDiffModalOpen}
         onOpenChange={setIsDiffModalOpen}
       />

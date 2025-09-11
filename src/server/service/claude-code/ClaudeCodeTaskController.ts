@@ -187,12 +187,37 @@ export class ClaudeCodeTaskController {
           status: "completed",
         });
       } catch (error) {
+        // Build a more helpful error message to bubble up to the caller/UI
+        const err = error as any;
+        const parts: string[] = [];
+        parts.push(
+          err instanceof Error && err.message ? err.message : String(err),
+        );
+        if (err && typeof err.code !== "undefined") {
+          parts.push(`code=${String(err.code)}`);
+        }
+        if (typeof err?.stderr === "string" && err.stderr.trim().length > 0) {
+          // Trim stderr to a reasonable length to avoid flooding logs
+          const stderr =
+            err.stderr.length > 2000
+              ? `${err.stderr.slice(0, 2000)}...`
+              : err.stderr;
+          parts.push(`stderr=${stderr}`);
+        }
+        parts.push(
+          `cwd=${task.cwd}`,
+          `resumeSessionId=${String(task.baseSessionId ?? "<new>")}`,
+          `cli=${this.pathToClaudeCodeExecutable}`,
+        );
+
+        const detailedMessage = `Error resuming task: ${parts.join(" | ")}`;
+
         if (!resolved) {
-          aliveTaskReject(error);
+          aliveTaskReject(new Error(detailedMessage));
           resolved = true;
         }
 
-        console.error("Error resuming task", error);
+        console.error(detailedMessage);
         this.updateExistingTask({
           ...task,
           status: "failed",
@@ -233,12 +258,26 @@ export class ClaudeCodeTaskController {
   }
 
   private updateExistingTask(task: ClaudeCodeTask) {
-    const target = this.tasks.find((t) => t.id === task.id);
+    const index = this.tasks.findIndex((t) => t.id === task.id);
 
-    if (!target) {
-      throw new Error("Task not found");
+    // If the task is not found, handle gracefully.
+    // This can happen when the underlying process fails before the first
+    // message arrives (i.e., before we ever pushed a running task).
+    if (index === -1) {
+      // If the task is already in a terminal failed state, record it so the
+      // UI can react to the change, otherwise no-op.
+      if (task.status === "failed") {
+        this.tasks.push(task);
+        this.eventBus.emit("task_changed", {
+          type: "task_changed",
+          data: this.aliveTasks,
+        });
+      }
+      return;
     }
 
+    // Ensure target is defined for TS, then assign
+    const target = this.tasks[index] as ClaudeCodeTask;
     Object.assign(target, task);
 
     this.eventBus.emit("task_changed", {

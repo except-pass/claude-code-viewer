@@ -230,13 +230,12 @@ export const AssistantConversationContent: FC<{
               variant="outline"
               className="border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300"
             >
-              {content.name === "Bash" 
+              {content.name === "Bash"
                 ? (() => {
                     const cmdName = getBashCommandName(content.input);
                     return cmdName ? `Bash-${cmdName}` : "Bash";
                   })()
-                : content.name
-              }
+                : content.name}
             </Badge>
           </div>
           <CardDescription className="text-xs">

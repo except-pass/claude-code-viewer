@@ -1,8 +1,11 @@
 import { statSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { readFile, access } from "node:fs/promises";
+import { dirname } from "node:path";
+import { isWorkingDirectoryClean } from "../git/getStatus";
 import { type ParsedCommand, parseCommandXml } from "../parseCommandXml";
 import { parseJsonl } from "../parseJsonl";
 import type { SessionMeta } from "../types";
+import { isWorktreeSession } from "../worktree/utils";
 
 const firstCommandCache = new Map<string, ParsedCommand | null>();
 
@@ -80,6 +83,30 @@ const getFirstCommand = (
   return firstCommand;
 };
 
+/**
+ * Extract working directory from session JSONL content
+ */
+const getWorkingDirectoryFromContent = (lines: string[]): string | null => {
+  for (const line of lines) {
+    const conversation = parseJsonl(line).at(0);
+    if (
+      conversation === undefined ||
+      conversation === null ||
+      // Skip meta-only entries
+      (conversation as any).type === "summary" ||
+      (conversation as any).type === "x-error"
+    ) {
+      continue;
+    }
+
+    const cwd = (conversation as any).cwd as string | undefined;
+    if (cwd && cwd.length > 0) {
+      return cwd;
+    }
+  }
+  return null;
+};
+
 export const getSessionMeta = async (
   jsonlFilePath: string,
 ): Promise<SessionMeta> => {
@@ -96,6 +123,40 @@ export const getSessionMeta = async (
       ? new Date(lastModifiedUnixTime).toISOString()
       : null,
   };
+
+  // Check if this is a worktree session and if it's dirty/orphaned
+  if (isWorktreeSession(jsonlFilePath)) {
+    try {
+      // Try to get working directory from content first
+      let workingDirectory = getWorkingDirectoryFromContent(lines);
+
+      // Fallback to the directory containing the JSONL file
+      if (!workingDirectory) {
+        workingDirectory = dirname(jsonlFilePath);
+      }
+
+      // Check if the worktree directory still exists
+      try {
+        await access(workingDirectory);
+        // Directory exists, check if it's dirty
+        const cleanResult = await isWorkingDirectoryClean(workingDirectory);
+        if (cleanResult.success) {
+          sessionMeta.isDirty = !cleanResult.data; // isDirty is opposite of isClean
+        }
+        sessionMeta.isOrphaned = false;
+      } catch {
+        // Directory doesn't exist, mark as orphaned
+        sessionMeta.isOrphaned = true;
+      }
+    } catch (error) {
+      // If any check fails, treat as orphaned
+      console.warn(
+        `Failed to check worktree session status ${jsonlFilePath}:`,
+        error,
+      );
+      sessionMeta.isOrphaned = true;
+    }
+  }
 
   return sessionMeta;
 };

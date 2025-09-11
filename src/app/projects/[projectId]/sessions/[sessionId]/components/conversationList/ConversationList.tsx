@@ -195,12 +195,35 @@ export const ConversationList: FC<ConversationListProps> = ({
           let hasToolUse = false;
           let hasErrors = false;
 
+          // Helper function to enhance tool names (similar to AssistantConversationContent)
+          const getEnhancedToolName = (content: any): string => {
+            if (content.name === "Bash") {
+              const getBashCommandName = (input: unknown): string | null => {
+                if (
+                  input &&
+                  typeof input === "object" &&
+                  "command" in input &&
+                  typeof input.command === "string"
+                ) {
+                  const command = input.command.trim();
+                  const firstWord = command.split(/\s+/)[0];
+                  return firstWord || null;
+                }
+                return null;
+              };
+              
+              const cmdName = getBashCommandName(content.input);
+              return cmdName ? `Bash-${cmdName}` : "Bash";
+            }
+            return content.name;
+          };
+
           group.conversations.forEach((conversation) => {
             if (conversation.type === "assistant") {
               conversation.message.content.forEach((content) => {
                 if (content.type === "tool_use") {
                   hasToolUse = true;
-                  toolNames.add(content.name);
+                  toolNames.add(getEnhancedToolName(content));
                   // Auto-expand the Response group if this is an edit-related tool
                   if (content.name === "Edit" || content.name === "MultiEdit") {
                     shouldExpand = true;

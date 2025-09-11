@@ -136,7 +136,11 @@ export const SessionsTab: FC<{
                       {title}
                     </h3>
                     {isWorktreeSession(session.jsonlFilePath) && (
-                      <WorktreeBadge className="text-xs" />
+                      <WorktreeBadge
+                        className="text-xs"
+                        isDirty={session.meta.isDirty}
+                        isOrphaned={session.meta.isOrphaned}
+                      />
                     )}
                   </div>
                   {(isRunning || isPaused) && (

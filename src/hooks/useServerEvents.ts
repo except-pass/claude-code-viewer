@@ -26,27 +26,33 @@ const parseSSEEvent = (text: string): ParsedEvent => {
   };
 
   if (eventIndex === -1 || dataIndex === -1 || idIndex === -1) {
-    console.error("failed", text);
-    throw new Error("Failed to parse SSE event");
+    console.error("Missing SSE fields in event:", text);
+    throw new Error(
+      `Failed to parse SSE event - missing fields. Event: ${text.slice(0, 100)}...`,
+    );
   }
 
   const event = lines.slice(eventIndex, endIndex(eventIndex)).join("\n");
   const data = lines.slice(dataIndex, endIndex(dataIndex)).join("\n");
   const id = lines.slice(idIndex, endIndex(idIndex)).join("\n");
 
-  return {
-    id: id.slice("id:".length).trim(),
-    event: event.slice("event:".length).trim(),
-    data: JSON.parse(data.slice("data:".length).trim()) as SSEEvent,
-  };
-};
+  const dataContent = data.slice("data:".length).trim();
 
-const parseSSEEvents = (text: string): ParsedEvent[] => {
-  const eventTexts = text
-    .split("\n\n")
-    .filter((eventText) => eventText.length > 0);
-
-  return eventTexts.map((eventText) => parseSSEEvent(eventText));
+  try {
+    const parsedData = JSON.parse(dataContent) as SSEEvent;
+    return {
+      id: id.slice("id:".length).trim(),
+      event: event.slice("event:".length).trim(),
+      data: parsedData,
+    };
+  } catch (error) {
+    console.error("JSON parse error:", error);
+    console.error("Data content:", dataContent);
+    console.error("Full event text:", text);
+    throw new Error(
+      `Failed to parse SSE event JSON: ${error}. Data: ${dataContent.slice(0, 100)}...`,
+    );
+  }
 };
 
 let isInitialized = false;
@@ -69,27 +75,49 @@ export const useServerEvents = () => {
     }
 
     const decoder = new TextDecoder();
+    let buffer = "";
 
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      const events = parseSSEEvents(decoder.decode(value));
 
-      for (const event of events) {
-        console.log("data", event);
+      // Add new chunk to buffer
+      buffer += decoder.decode(value, { stream: true });
 
-        if (event.data.type === "project_changed") {
-          await queryClient.invalidateQueries({
-            queryKey: projetsQueryConfig.queryKey,
-          });
-        }
+      // Process complete events (separated by \n\n)
+      const eventBoundary = "\n\n";
+      let boundaryIndex;
 
-        if (event.data.type === "session_changed") {
-          await queryClient.invalidateQueries({ queryKey: ["sessions"] });
-        }
+      while ((boundaryIndex = buffer.indexOf(eventBoundary)) !== -1) {
+        const eventText = buffer.slice(0, boundaryIndex);
+        buffer = buffer.slice(boundaryIndex + eventBoundary.length);
 
-        if (event.data.type === "task_changed") {
-          setAliveTasks(event.data.data);
+        if (eventText.trim().length > 0) {
+          try {
+            const event = parseSSEEvent(eventText);
+            console.log("data", event);
+
+            if (event.data.type === "project_changed") {
+              await queryClient.invalidateQueries({
+                queryKey: projetsQueryConfig.queryKey,
+              });
+            }
+
+            if (event.data.type === "session_changed") {
+              await queryClient.invalidateQueries({ queryKey: ["sessions"] });
+            }
+
+            if (event.data.type === "task_changed") {
+              setAliveTasks(event.data.data);
+            }
+          } catch (error) {
+            console.error(
+              "Failed to parse SSE event:",
+              error,
+              "Event text:",
+              eventText,
+            );
+          }
         }
       }
     }

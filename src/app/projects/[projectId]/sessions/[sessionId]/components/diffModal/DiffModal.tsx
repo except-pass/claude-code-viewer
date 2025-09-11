@@ -17,8 +17,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { WorktreeBadge } from "@/components/ui/worktree-badge";
 import { cn } from "@/lib/utils";
-import { useGitBranches, useGitCommits, useGitDiff } from "../../hooks/useGit";
+import { isWorktreeSession } from "@/lib/worktree";
+import {
+  useGitBranches,
+  useGitCommits,
+  useGitDiff,
+  useSessionGitBranches,
+  useSessionGitCommits,
+  useSessionGitDiff,
+} from "../../hooks/useGit";
+import { useSession } from "../../hooks/useSession";
 import { DiffViewer } from "./DiffViewer";
 import type { DiffModalProps, DiffSummary, GitRef } from "./types";
 
@@ -125,23 +135,42 @@ export const DiffModal: FC<DiffModalProps> = ({
   isOpen,
   onOpenChange,
   projectId,
+  sessionId,
   defaultCompareFrom = "HEAD",
   defaultCompareTo = "working",
 }) => {
   const [compareFrom, setCompareFrom] = useState(defaultCompareFrom);
   const [compareTo, setCompareTo] = useState(defaultCompareTo);
 
-  // API hooks
-  const { data: branchesData, isLoading: isLoadingBranches } =
-    useGitBranches(projectId);
-  const { data: commitsData, isLoading: isLoadingCommits } =
-    useGitCommits(projectId);
+  // Since we're in a session route, we always have sessionId from route params
+  // But the modal prop sessionId might be optional for backward compatibility
+  const actualSessionId = sessionId || "";
+  
+  // Always call all hooks unconditionally 
+  const sessionData = useSession(projectId, actualSessionId);
+  const projectBranches = useGitBranches(projectId);
+  const projectCommits = useGitCommits(projectId);
+  const projectDiff = useGitDiff();
+  const sessionBranches = useSessionGitBranches(projectId, actualSessionId);
+  const sessionCommits = useSessionGitCommits(projectId, actualSessionId);
+  const sessionDiff = useSessionGitDiff();
+  
+  // Check if we're in a worktree session
+  const isWorktree = sessionData?.session && isWorktreeSession(sessionData.session.jsonlFilePath);
+  const isOrphaned = sessionData?.session?.meta?.isOrphaned;
+  const useSessionContext = Boolean(actualSessionId && isWorktree && !isOrphaned);
+
+  const { data: branchesData, isLoading: isLoadingBranches } = useSessionContext
+    ? sessionBranches
+    : projectBranches;
+  const { data: commitsData, isLoading: isLoadingCommits } = useSessionContext
+    ? sessionCommits
+    : projectCommits;
   const {
-    mutate: getDiff,
     data: diffData,
     isPending: isDiffLoading,
     error: diffError,
-  } = useGitDiff();
+  } = useSessionContext ? sessionDiff : projectDiff;
 
   // Transform branches and commits data to GitRef format
   const gitRefs: GitRef[] =
@@ -177,13 +206,30 @@ export const DiffModal: FC<DiffModalProps> = ({
 
   const loadDiff = useCallback(() => {
     if (compareFrom && compareTo && compareFrom !== compareTo) {
-      getDiff({
-        projectId,
-        fromRef: compareFrom,
-        toRef: compareTo,
-      });
+      if (useSessionContext && actualSessionId) {
+        sessionDiff.mutate({
+          projectId,
+          sessionId: actualSessionId,
+          fromRef: compareFrom,
+          toRef: compareTo,
+        });
+      } else {
+        projectDiff.mutate({
+          projectId,
+          fromRef: compareFrom,
+          toRef: compareTo,
+        });
+      }
     }
-  }, [compareFrom, compareTo, getDiff, projectId]);
+  }, [
+    compareFrom,
+    compareTo,
+    projectId,
+    actualSessionId,
+    useSessionContext,
+    sessionDiff.mutate,
+    projectDiff.mutate,
+  ]);
 
   useEffect(() => {
     if (isOpen && compareFrom && compareTo) {
@@ -199,104 +245,127 @@ export const DiffModal: FC<DiffModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-7xl w-[95vw] h-[90vh] overflow-hidden flex flex-col px-2 md:px-8">
         <DialogHeader>
-          <DialogTitle>Preview Changes</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Preview Changes
+            {isWorktree && (
+              <WorktreeBadge
+                isDirty={sessionData?.session?.meta?.isDirty}
+                isOrphaned={isOrphaned}
+              />
+            )}
+          </DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
-          <div className="flex flex-col sm:flex-row gap-3 flex-1">
-            <RefSelector
-              label="Compare from"
-              value={compareFrom}
-              onValueChange={setCompareFrom}
-              refs={gitRefs.filter((ref) => ref.name !== "working")}
-            />
-            <RefSelector
-              label="Compare to"
-              value={compareTo}
-              onValueChange={setCompareTo}
-              refs={gitRefs}
-            />
-          </div>
-          <Button
-            onClick={handleCompare}
-            disabled={
-              isDiffLoading ||
-              isLoadingBranches ||
-              isLoadingCommits ||
-              compareFrom === compareTo
-            }
-            className="sm:self-end w-full sm:w-auto"
-          >
-            {isDiffLoading ? (
-              <>
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                Loading...
-              </>
-            ) : (
-              <RefreshCcwIcon className="w-4 h-4" />
-            )}
-          </Button>
-        </div>
-
-        {diffError && (
-          <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4">
-            <p className="text-red-600 dark:text-red-400 text-sm">
-              {diffError.message}
-            </p>
-          </div>
-        )}
-
-        {diffData?.success && (
-          <>
-            <DiffSummaryComponent
-              summary={{
-                filesChanged: diffData.data.files.length,
-                insertions: diffData.data.summary.totalAdditions,
-                deletions: diffData.data.summary.totalDeletions,
-                files: diffData.data.diffs.map((diff) => ({
-                  filename: diff.file.filePath,
-                  oldFilename: diff.file.oldPath,
-                  isNew: diff.file.status === "added",
-                  isDeleted: diff.file.status === "deleted",
-                  isRenamed: diff.file.status === "renamed",
-                  isBinary: false,
-                  hunks: diff.hunks,
-                  linesAdded: diff.file.additions,
-                  linesDeleted: diff.file.deletions,
-                })),
-              }}
-            />
-
-            <div className="flex-1 overflow-auto space-y-6">
-              {diffData.data.diffs.map((diff) => (
-                <DiffViewer
-                  key={diff.file.filePath}
-                  fileDiff={{
-                    filename: diff.file.filePath,
-                    oldFilename: diff.file.oldPath,
-                    isNew: diff.file.status === "added",
-                    isDeleted: diff.file.status === "deleted",
-                    isRenamed: diff.file.status === "renamed",
-                    isBinary: false,
-                    hunks: diff.hunks,
-                    linesAdded: diff.file.additions,
-                    linesDeleted: diff.file.deletions,
-                  }}
-                />
-              ))}
-            </div>
-          </>
-        )}
-
-        {isDiffLoading && (
+        {isOrphaned ? (
           <div className="flex-1 flex items-center justify-center">
-            <div className="text-center space-y-2">
-              <Loader2 className="w-8 h-8 animate-spin mx-auto" />
-              <p className="text-sm text-gray-500 dark:text-gray-400">
-                Loading diff...
+            <div className="text-center text-gray-500 dark:text-gray-400">
+              <div className="text-6xl mb-4">⛓️‍💥</div>
+              <h3 className="text-lg font-medium mb-2">Worktree Removed</h3>
+              <p className="text-sm max-w-md">
+                The worktree directory for this session has been removed.
+                Git operations are not available for orphaned sessions.
               </p>
             </div>
           </div>
+        ) : (
+          <>
+            <div className="flex flex-col sm:flex-row gap-3 sm:items-end">
+              <div className="flex flex-col sm:flex-row gap-3 flex-1">
+                <RefSelector
+                  label="Compare from"
+                  value={compareFrom}
+                  onValueChange={setCompareFrom}
+                  refs={gitRefs.filter((ref) => ref.name !== "working")}
+                />
+                <RefSelector
+                  label="Compare to"
+                  value={compareTo}
+                  onValueChange={setCompareTo}
+                  refs={gitRefs}
+                />
+              </div>
+              <Button
+                onClick={handleCompare}
+                disabled={
+                  isDiffLoading ||
+                  isLoadingBranches ||
+                  isLoadingCommits ||
+                  compareFrom === compareTo
+                }
+                className="sm:self-end w-full sm:w-auto"
+              >
+                {isDiffLoading ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Loading...
+                  </>
+                ) : (
+                  <RefreshCcwIcon className="w-4 h-4" />
+                )}
+              </Button>
+            </div>
+
+            {diffError && (
+              <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4">
+                <p className="text-red-600 dark:text-red-400 text-sm">
+                  {diffError.message}
+                </p>
+              </div>
+            )}
+
+            {diffData?.success && (
+              <>
+                <DiffSummaryComponent
+                  summary={{
+                    filesChanged: diffData.data.files.length,
+                    insertions: diffData.data.summary.totalAdditions,
+                    deletions: diffData.data.summary.totalDeletions,
+                    files: diffData.data.diffs.map((diff) => ({
+                      filename: diff.file.filePath,
+                      oldFilename: diff.file.oldPath,
+                      isNew: diff.file.status === "added",
+                      isDeleted: diff.file.status === "deleted",
+                      isRenamed: diff.file.status === "renamed",
+                      isBinary: false,
+                      hunks: diff.hunks,
+                      linesAdded: diff.file.additions,
+                      linesDeleted: diff.file.deletions,
+                    })),
+                  }}
+                />
+
+                <div className="flex-1 overflow-auto space-y-6">
+                  {diffData.data.diffs.map((diff) => (
+                    <DiffViewer
+                      key={diff.file.filePath}
+                      fileDiff={{
+                        filename: diff.file.filePath,
+                        oldFilename: diff.file.oldPath,
+                        isNew: diff.file.status === "added",
+                        isDeleted: diff.file.status === "deleted",
+                        isRenamed: diff.file.status === "renamed",
+                        isBinary: false,
+                        hunks: diff.hunks,
+                        linesAdded: diff.file.additions,
+                        linesDeleted: diff.file.deletions,
+                      }}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+
+            {isDiffLoading && (
+              <div className="flex-1 flex items-center justify-center">
+                <div className="text-center space-y-2">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto" />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Loading diff...
+                  </p>
+                </div>
+              </div>
+            )}
+          </>
         )}
       </DialogContent>
     </Dialog>

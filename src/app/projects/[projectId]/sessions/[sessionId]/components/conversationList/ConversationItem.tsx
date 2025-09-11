@@ -29,7 +29,7 @@ export const ConversationItem: FC<{
 
   if (conversation.type === "system") {
     return (
-      <SystemConversationContent>
+      <SystemConversationContent level={conversation.level}>
         {conversation.content}
       </SystemConversationContent>
     );

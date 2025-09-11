@@ -24,6 +24,8 @@ export type SessionMeta = {
   messageCount: number;
   firstCommand: ParsedCommand | null;
   lastModifiedAt: string | null;
+  isDirty?: boolean; // For worktree sessions, indicates if there are uncommitted changes
+  isOrphaned?: boolean; // For worktree sessions, indicates if the worktree directory no longer exists
 };
 
 export type ErrorJsonl = {
