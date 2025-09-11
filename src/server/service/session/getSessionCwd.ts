@@ -1,5 +1,7 @@
-import { resolve, dirname } from "node:path";
-import { decodeProjectId } from "../project/id";
+import { dirname } from "node:path";
+import { readFile } from "node:fs/promises";
+import { getProject } from "../project/getProject";
+import { parseJsonl } from "../parseJsonl";
 import { getSession } from "./getSession";
 
 /**
@@ -11,21 +13,45 @@ export const getSessionCwd = async (
   projectId: string,
   sessionId: string,
 ): Promise<string> => {
-  const decodedProjectPath = decodeProjectId(projectId);
   const { session } = await getSession(projectId, sessionId);
 
-  // session.jsonlFilePath points to either main project or a worktree project
-  // The session's cwd in Claude is the directory where the JSONL file resides' project root
-  // i.e., ~/.claude/projects/<project-name>/... or ~/.tinstar/worktrees/<project>/<id>/.../projects/<project-name>
-  // Using dirname twice to reach the project directory when JSONL is directly under project path
-  // Example: /home/user/.claude/projects/-home-user-repo-app/<session>.jsonl -> cwd = dir of JSONL's parent
-  const sessionJsonlDir = dirname(session.jsonlFilePath);
+  // Attempt to extract the recorded repo cwd from the session JSONL itself
+  try {
+    const content = await readFile(session.jsonlFilePath, "utf-8");
+    const lines = content.split("\n");
 
-  // Prefer the cwd recorded in the JSONL if available via project meta discovery,
-  // otherwise fall back to the directory containing the JSONL file.
-  const cwdFromJsonl = session.meta.firstCommand !== null ? undefined : undefined;
+    for (const line of lines) {
+      const conversation = parseJsonl(line).at(0);
+      if (
+        conversation === undefined ||
+        conversation === null ||
+        // Skip meta-only entries
+        (conversation as any).type === "summary" ||
+        (conversation as any).type === "x-error"
+      ) {
+        continue;
+      }
 
-  return cwdFromJsonl ?? sessionJsonlDir ?? resolve(decodedProjectPath);
+      const cwd = (conversation as any).cwd as string | undefined;
+      if (cwd && cwd.length > 0) {
+        return cwd;
+      }
+    }
+  } catch {
+    // Ignore and fall through to fallbacks
+  }
+
+  // Fallbacks: prefer project meta path, then the directory containing the JSONL file
+  try {
+    const { project } = await getProject(projectId);
+    if (project.meta.projectPath) {
+      return project.meta.projectPath;
+    }
+  } catch {
+    // ignore
+  }
+
+  return dirname(session.jsonlFilePath);
 };
 
 
