@@ -64,8 +64,14 @@ export const SessionPageContent: FC<{
   const [isDiffModalOpen, setIsDiffModalOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [previousSessionId, setPreviousSessionId] = useState(sessionId);
+  const hasAutoScrolledRef = useRef(false);
 
-  // Auto-scroll when switching to a new session
+  // Reset one-time auto-scroll flag when session changes
+  useEffect(() => {
+    hasAutoScrolledRef.current = false;
+  }, [sessionId]);
+
+  // Auto-scroll when switching to a new session (route param change within same component instance)
   useEffect(() => {
     if (previousSessionId !== sessionId) {
       setPreviousSessionId(sessionId);
@@ -75,12 +81,30 @@ export const SessionPageContent: FC<{
         setTimeout(() => {
           scrollContainer.scrollTo({
             top: scrollContainer.scrollHeight,
-            behavior: "instant",
+            behavior: "auto",
           });
+          hasAutoScrolledRef.current = true;
         }, 0);
       }
     }
   }, [sessionId, previousSessionId]);
+
+  // Auto-scroll on initial mount after conversations render (covers remounts on navigation)
+  useEffect(() => {
+    if (hasAutoScrolledRef.current) return;
+    if (conversations.length === 0) return;
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+    // Next tick to ensure layout is complete
+    const id = setTimeout(() => {
+      scrollContainer.scrollTo({
+        top: scrollContainer.scrollHeight,
+        behavior: "auto",
+      });
+      hasAutoScrolledRef.current = true;
+    }, 0);
+    return () => clearTimeout(id);
+  }, [conversations.length, sessionId]);
 
   // 自動スクロール処理
   useEffect(() => {
