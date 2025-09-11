@@ -109,6 +109,23 @@ function convertSyntheticDiffToFileDiff(
   }
 }
 
+/**
+ * Extract the first command word from Bash tool input parameters
+ */
+function getBashCommandName(input: unknown): string | null {
+  if (
+    input &&
+    typeof input === "object" &&
+    "command" in input &&
+    typeof input.command === "string"
+  ) {
+    const command = input.command.trim();
+    const firstWord = command.split(/\s+/)[0];
+    return firstWord || null;
+  }
+  return null;
+}
+
 export const AssistantConversationContent: FC<{
   content: AssistantMessageContent;
   getToolResult: (toolUseId: string) => ToolResultContent | undefined;
@@ -213,7 +230,13 @@ export const AssistantConversationContent: FC<{
               variant="outline"
               className="border-blue-300 text-blue-700 dark:border-blue-700 dark:text-blue-300"
             >
-              {content.name}
+              {content.name === "Bash" 
+                ? (() => {
+                    const cmdName = getBashCommandName(content.input);
+                    return cmdName ? `Bash-${cmdName}` : "Bash";
+                  })()
+                : content.name
+              }
             </Badge>
           </div>
           <CardDescription className="text-xs">
