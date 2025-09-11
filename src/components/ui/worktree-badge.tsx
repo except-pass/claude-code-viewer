@@ -7,6 +7,10 @@ interface WorktreeBadgeProps {
 }
 
 export function WorktreeBadge({ className, isDirty }: WorktreeBadgeProps) {
+  const title = isDirty 
+    ? "Worktree has uncommitted changes" 
+    : "Worktree is clean";
+
   return (
     <Badge
       variant="secondary"
@@ -14,6 +18,7 @@ export function WorktreeBadge({ className, isDirty }: WorktreeBadgeProps) {
         className,
         isDirty && "bg-red-50/60 border-red-300/60 text-red-700",
       )}
+      title={title}
     >
       🌱 Worktree
     </Badge>

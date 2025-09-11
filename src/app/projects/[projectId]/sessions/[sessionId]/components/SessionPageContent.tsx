@@ -184,6 +184,11 @@ export const SessionPageContent: FC<{
                       ? "bg-red-50/60 border-red-300/60 text-red-700"
                       : "bg-green-50/60 border-green-300/60 text-green-700",
                   )}
+                  title={
+                    session.meta.isDirty
+                      ? "Worktree has uncommitted changes"
+                      : "Worktree is clean"
+                  }
                 >
                   worktree/{extractWorktreeUuid(session.jsonlFilePath)}
                 </Badge>
