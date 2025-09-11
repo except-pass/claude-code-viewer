@@ -1,5 +1,5 @@
 import { statSync } from "node:fs";
-import { readFile } from "node:fs/promises";
+import { readFile, access } from "node:fs/promises";
 import { dirname } from "node:path";
 import { isWorkingDirectoryClean } from "../git/getStatus";
 import { type ParsedCommand, parseCommandXml } from "../parseCommandXml";
@@ -124,7 +124,7 @@ export const getSessionMeta = async (
       : null,
   };
 
-  // Check if this is a worktree session and if it's dirty
+  // Check if this is a worktree session and if it's dirty/orphaned
   if (isWorktreeSession(jsonlFilePath)) {
     try {
       // Try to get working directory from content first
@@ -135,17 +135,26 @@ export const getSessionMeta = async (
         workingDirectory = dirname(jsonlFilePath);
       }
 
-      // Check git status to determine if the worktree is dirty
-      const cleanResult = await isWorkingDirectoryClean(workingDirectory);
-      if (cleanResult.success) {
-        sessionMeta.isDirty = !cleanResult.data; // isDirty is opposite of isClean
+      // Check if the worktree directory still exists
+      try {
+        await access(workingDirectory);
+        // Directory exists, check if it's dirty
+        const cleanResult = await isWorkingDirectoryClean(workingDirectory);
+        if (cleanResult.success) {
+          sessionMeta.isDirty = !cleanResult.data; // isDirty is opposite of isClean
+        }
+        sessionMeta.isOrphaned = false;
+      } catch {
+        // Directory doesn't exist, mark as orphaned
+        sessionMeta.isOrphaned = true;
       }
     } catch (error) {
-      // If git status check fails, don't set isDirty (defaults to undefined)
+      // If any check fails, treat as orphaned
       console.warn(
-        `Failed to check git status for worktree session ${jsonlFilePath}:`,
+        `Failed to check worktree session status ${jsonlFilePath}:`,
         error,
       );
+      sessionMeta.isOrphaned = true;
     }
   }
 

@@ -156,7 +156,10 @@ export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
                           : session.id}
                       </span>
                       {isWorktreeSession(session.jsonlFilePath) && (
-                        <WorktreeBadge />
+                        <WorktreeBadge
+                          isDirty={session.meta.isDirty}
+                          isOrphaned={session.meta.isOrphaned}
+                        />
                       )}
                     </CardTitle>
                     <CardDescription className="font-mono text-xs">

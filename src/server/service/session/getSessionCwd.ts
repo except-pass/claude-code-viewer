@@ -1,13 +1,60 @@
-import { readFile } from "node:fs/promises";
+import { readFile, access } from "node:fs/promises";
 import { dirname } from "node:path";
 import { parseJsonl } from "../parseJsonl";
 import { getProject } from "../project/getProject";
 import { getSession } from "./getSession";
+import { isWorktreeSession } from "../worktree/utils";
+
+/**
+ * Checks if a worktree session is orphaned (worktree directory no longer exists)
+ */
+export const isOrphanedWorktreeSession = async (
+  sessionFilePath: string,
+): Promise<boolean> => {
+  if (!isWorktreeSession(sessionFilePath)) {
+    return false;
+  }
+
+  try {
+    const content = await readFile(sessionFilePath, "utf-8");
+    const lines = content.split("\n");
+
+    // Extract CWD from session
+    for (const line of lines) {
+      const conversation = parseJsonl(line).at(0);
+      if (
+        conversation === undefined ||
+        conversation === null ||
+        (conversation as any).type === "summary" ||
+        (conversation as any).type === "x-error"
+      ) {
+        continue;
+      }
+
+      const cwd = (conversation as any).cwd as string | undefined;
+      if (cwd && cwd.length > 0) {
+        // Check if the worktree directory still exists
+        try {
+          await access(cwd);
+          return false; // Directory exists, not orphaned
+        } catch {
+          return true; // Directory doesn't exist, orphaned
+        }
+      }
+    }
+  } catch {
+    // Error reading session - treat as orphaned
+    return true;
+  }
+
+  return false;
+};
 
 /**
  * Resolve the correct working directory for a given session.
  * - For regular sessions, returns the project cwd extracted from JSONL.
  * - For worktree sessions, returns the specific worktree path.
+ * - Throws error if worktree session is orphaned.
  */
 export const getSessionCwd = async (
   projectId: string,

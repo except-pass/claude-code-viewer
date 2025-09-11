@@ -139,6 +139,7 @@ export const SessionsTab: FC<{
                       <WorktreeBadge
                         className="text-xs"
                         isDirty={session.meta.isDirty}
+                        isOrphaned={session.meta.isOrphaned}
                       />
                     )}
                   </div>

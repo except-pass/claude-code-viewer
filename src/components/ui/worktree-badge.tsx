@@ -4,9 +4,25 @@ import { Badge } from "./badge";
 interface WorktreeBadgeProps {
   className?: string;
   isDirty?: boolean;
+  isOrphaned?: boolean;
 }
 
-export function WorktreeBadge({ className, isDirty }: WorktreeBadgeProps) {
+export function WorktreeBadge({ className, isDirty, isOrphaned }: WorktreeBadgeProps) {
+  if (isOrphaned) {
+    return (
+      <Badge
+        variant="secondary"
+        className={cn(
+          className,
+          "bg-gray-50/60 border-gray-400/60 text-gray-700",
+        )}
+        title="Worktree directory has been removed. Git operations and new messages are disabled for this session."
+      >
+        ⛓️‍💥 Tree Removed
+      </Badge>
+    );
+  }
+
   const title = isDirty 
     ? "Worktree has uncommitted changes" 
     : "Worktree is clean";

@@ -21,6 +21,7 @@ import {
   extractWorktreeUuid,
   isWorktreeSession,
 } from "../../../../../../lib/worktree-utils";
+import { WorktreeBadge } from "../../../../../../components/ui/worktree-badge";
 import { useProject } from "../../../hooks/useProject";
 import { firstCommandToTitle } from "../../../services/firstCommandToTitle";
 import { useAliveTask } from "../hooks/useAliveTask";
@@ -176,22 +177,11 @@ export const SessionPageContent: FC<{
                 claude session: {sessionId}
               </Badge>
               {isWorktreeSession(session.jsonlFilePath) && (
-                <Badge
-                  variant="outline"
-                  className={cn(
-                    "h-6 sm:h-8 text-xs sm:text-sm flex items-center",
-                    session.meta.isDirty
-                      ? "bg-red-50/60 border-red-300/60 text-red-700"
-                      : "bg-green-50/60 border-green-300/60 text-green-700",
-                  )}
-                  title={
-                    session.meta.isDirty
-                      ? "Worktree has uncommitted changes"
-                      : "Worktree is clean"
-                  }
-                >
-                  worktree/{extractWorktreeUuid(session.jsonlFilePath)}
-                </Badge>
+                <WorktreeBadge
+                  className="h-6 sm:h-8 text-xs sm:text-sm"
+                  isDirty={session.meta.isDirty}
+                  isOrphaned={session.meta.isOrphaned}
+                />
               )}
             </div>
 
@@ -271,6 +261,7 @@ export const SessionPageContent: FC<{
               sessionId={sessionId}
               isPausedTask={isPausedTask}
               isRunningTask={isRunningTask}
+              isOrphaned={session.meta.isOrphaned}
             />
           </main>
         </div>
@@ -279,8 +270,14 @@ export const SessionPageContent: FC<{
       {/* Fixed Diff Button */}
       <Button
         onClick={() => setIsDiffModalOpen(true)}
+        disabled={session.meta.isOrphaned}
         className="fixed bottom-6 right-6 w-14 h-14 rounded-full shadow-lg hover:shadow-xl transition-all duration-200 z-50"
         size="lg"
+        title={
+          session.meta.isOrphaned
+            ? "Worktree directory has been removed. Git operations are disabled for this session."
+            : "Show git diff"
+        }
       >
         <GitCompareIcon className="w-6 h-6" />
       </Button>
