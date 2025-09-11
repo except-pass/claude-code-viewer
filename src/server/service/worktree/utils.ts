@@ -60,15 +60,68 @@ export const isWorktreeSession = (sessionFilePath: string): boolean => {
 
 /**
  * Extracts the parent project name from a worktree directory name
- * Example: "-home-ubuntu-repo-tinstar-worktrees-uuid" -> "-home-ubuntu-repo-tinstar"
- * Example: "--home-ubuntu--tinstar-worktrees-uuid" -> "-home-ubuntu--tinstar"
+ * Uses generic pattern matching that works on any machine/user:
+ * - Mirrored: "-any-path--tinstar-worktrees--project-name-uuid" -> "-project-name"
+ * - Old: "--home-ubuntu--tinstar-worktrees-uuid" -> "-home-ubuntu--tinstar"
  */
 export const extractParentProjectNameFromWorktreePath = (
   worktreeProjectDirName: string,
 ): string | null => {
-  // Pattern: {project-name}-worktrees-{uuid}
-  const match = worktreeProjectDirName.match(/^(.+)-worktrees-[^-]+$/);
-  return match?.[1] ?? null;
+  // Check for mirrored pattern with tinstar-worktrees delimiter
+  const delimiterIndex = worktreeProjectDirName.indexOf(
+    "--tinstar-worktrees--",
+  );
+  if (delimiterIndex !== -1) {
+    // Extract everything after the delimiter
+    const afterDelimiter = worktreeProjectDirName.slice(
+      delimiterIndex + "--tinstar-worktrees--".length,
+    );
+
+    // Remove trailing UUID (pattern: -{uuid} where uuid is alphanumeric)
+    const withoutUuid = afterDelimiter.replace(/-[a-z0-9]+$/, "");
+
+    // Add leading dash to match Claude project naming convention
+    return withoutUuid ? `-${withoutUuid}` : null;
+  }
+
+  // Fallback to old pattern: {project-name}-worktrees-{uuid}
+  const oldMatch = worktreeProjectDirName.match(/^(.+)-worktrees-[^-]+$/);
+  return oldMatch?.[1] ?? null;
+};
+
+/**
+ * Extracts the worktree UUID from a worktree session file path
+ * Returns null if the session is not from a worktree
+ */
+export const extractWorktreeUuid = (sessionFilePath: string): string | null => {
+  if (!isWorktreeSession(sessionFilePath)) {
+    return null;
+  }
+
+  // Extract the project directory name from the path
+  const pathParts = sessionFilePath.split("/");
+  const projectDirName = pathParts.find((part) => part.includes("-worktrees-"));
+
+  if (!projectDirName) {
+    return null;
+  }
+
+  // Check for mirrored pattern with tinstar-worktrees delimiter
+  const delimiterIndex = projectDirName.indexOf("--tinstar-worktrees--");
+  if (delimiterIndex !== -1) {
+    // Extract everything after the delimiter
+    const afterDelimiter = projectDirName.slice(
+      delimiterIndex + "--tinstar-worktrees--".length,
+    );
+
+    // Extract the UUID (last hyphen-separated segment)
+    const uuidMatch = afterDelimiter.match(/-([a-z0-9]+)$/);
+    return uuidMatch?.[1] ?? null;
+  }
+
+  // Fallback to old pattern: {project-name}-worktrees-{uuid}
+  const oldMatch = projectDirName.match(/-worktrees-([a-z0-9]+)$/);
+  return oldMatch?.[1] ?? null;
 };
 
 /**

@@ -16,6 +16,10 @@ import { Button } from "@/components/ui/button";
 import { useTaskNotifications } from "@/hooks/useTaskNotifications";
 import { Badge } from "../../../../../../components/ui/badge";
 import { honoClient } from "../../../../../../lib/api/client";
+import {
+  extractWorktreeUuid,
+  isWorktreeSession,
+} from "../../../../../../lib/worktree-utils";
 import { useProject } from "../../../hooks/useProject";
 import { firstCommandToTitle } from "../../../services/firstCommandToTitle";
 import { useAliveTask } from "../hooks/useAliveTask";
@@ -128,6 +132,14 @@ export const SessionPageContent: FC<{
               >
                 claude session: {sessionId}
               </Badge>
+              {isWorktreeSession(session.jsonlFilePath) && (
+                <Badge
+                  variant="outline"
+                  className="h-6 sm:h-8 text-xs sm:text-sm flex items-center bg-green-50/60 border-green-300/60 text-green-700"
+                >
+                  worktree/{extractWorktreeUuid(session.jsonlFilePath)}
+                </Badge>
+              )}
             </div>
 
             {isRunningTask && (

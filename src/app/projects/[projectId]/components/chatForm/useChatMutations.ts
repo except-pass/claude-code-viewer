@@ -31,7 +31,12 @@ export const useNewChatMutation = (
       );
 
       if (!response.ok) {
-        throw new Error(response.statusText);
+        const body = await response.json().catch(() => undefined);
+        const message =
+          body && typeof body.error === "string"
+            ? body.error
+            : response.statusText;
+        throw new Error(message);
       }
 
       return response.json();
@@ -65,7 +70,12 @@ export const useResumeChatMutation = (projectId: string, sessionId: string) => {
       );
 
       if (!response.ok) {
-        throw new Error(response.statusText);
+        const body = await response.json().catch(() => undefined);
+        const message =
+          body && typeof body.error === "string"
+            ? body.error
+            : response.statusText;
+        throw new Error(message);
       }
 
       return response.json();
