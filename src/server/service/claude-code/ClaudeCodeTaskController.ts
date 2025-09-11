@@ -191,18 +191,17 @@ export class ClaudeCodeTaskController {
         const err = error as any;
         const parts: string[] = [];
         parts.push(
-          err instanceof Error && err.message
-            ? err.message
-            : String(err),
+          err instanceof Error && err.message ? err.message : String(err),
         );
         if (err && typeof err.code !== "undefined") {
           parts.push(`code=${String(err.code)}`);
         }
         if (typeof err?.stderr === "string" && err.stderr.trim().length > 0) {
           // Trim stderr to a reasonable length to avoid flooding logs
-          const stderr = err.stderr.length > 2000
-            ? `${err.stderr.slice(0, 2000)}...`
-            : err.stderr;
+          const stderr =
+            err.stderr.length > 2000
+              ? `${err.stderr.slice(0, 2000)}...`
+              : err.stderr;
           parts.push(`stderr=${stderr}`);
         }
         parts.push(

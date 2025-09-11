@@ -24,6 +24,7 @@ export type SessionMeta = {
   messageCount: number;
   firstCommand: ParsedCommand | null;
   lastModifiedAt: string | null;
+  isDirty?: boolean; // For worktree sessions, indicates if there are uncommitted changes
 };
 
 export type ErrorJsonl = {

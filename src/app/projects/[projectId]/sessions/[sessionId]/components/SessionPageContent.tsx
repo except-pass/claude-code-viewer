@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { useTaskNotifications } from "@/hooks/useTaskNotifications";
 import { Badge } from "../../../../../../components/ui/badge";
 import { honoClient } from "../../../../../../lib/api/client";
+import { cn } from "@/lib/utils";
 import {
   extractWorktreeUuid,
   isWorktreeSession,
@@ -69,7 +70,7 @@ export const SessionPageContent: FC<{
   // Reset one-time auto-scroll flag when session changes
   useEffect(() => {
     hasAutoScrolledRef.current = false;
-  }, [sessionId]);
+  }, []);
 
   // Auto-scroll when switching to a new session (route param change within same component instance)
   useEffect(() => {
@@ -104,7 +105,7 @@ export const SessionPageContent: FC<{
       hasAutoScrolledRef.current = true;
     }, 0);
     return () => clearTimeout(id);
-  }, [conversations.length, sessionId]);
+  }, [conversations.length]);
 
   // 自動スクロール処理
   useEffect(() => {
@@ -177,7 +178,12 @@ export const SessionPageContent: FC<{
               {isWorktreeSession(session.jsonlFilePath) && (
                 <Badge
                   variant="outline"
-                  className="h-6 sm:h-8 text-xs sm:text-sm flex items-center bg-green-50/60 border-green-300/60 text-green-700"
+                  className={cn(
+                    "h-6 sm:h-8 text-xs sm:text-sm flex items-center",
+                    session.meta.isDirty
+                      ? "bg-red-50/60 border-red-300/60 text-red-700"
+                      : "bg-green-50/60 border-green-300/60 text-green-700",
+                  )}
                 >
                   worktree/{extractWorktreeUuid(session.jsonlFilePath)}
                 </Badge>

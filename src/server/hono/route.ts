@@ -359,7 +359,9 @@ export const routes = (app: HonoAppType) => {
             return c.json(
               {
                 error:
-                  error instanceof Error ? error.message : "Failed to start session",
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to start session",
               },
               500,
             );
@@ -407,7 +409,9 @@ export const routes = (app: HonoAppType) => {
             return c.json(
               {
                 error:
-                  error instanceof Error ? error.message : "Failed to resume session",
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to resume session",
               },
               500,
             );
