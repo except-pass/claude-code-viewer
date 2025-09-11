@@ -41,7 +41,6 @@ The application leverages Server-Sent Events (SSE) for real-time bidirectional c
 Clone and run locally:
 
 ```bash
-git clone https://github.com/d-kimuson/claude-code-viewer.git
 cd claude-code-viewer
 pnpm i
 pnpm build
