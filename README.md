@@ -46,6 +46,7 @@ pnpm i
 pnpm build
 pnpm start
 ```
+or `pnpm dev`
 
 ## Data Source
 
@@ -85,7 +86,7 @@ The application reads Claude Code conversation files from:
 Set a custom port using the `PORT` environment variable:
 
 ```bash
-PORT=8080 npx @kimuson/claude-code-viewer@latest
+PORT=8080 pnpm dev
 ```
 
 ### Data Directory
