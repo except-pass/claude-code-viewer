@@ -36,28 +36,7 @@ The application leverages Server-Sent Events (SSE) for real-time bidirectional c
 - **Command Detection** - Enhanced display of XML-like command structures
 - **Task Controller** - Full lifecycle management of Claude processes
 
-## Installation & Usage
-
-### Quick Start (CLI)
-
-Run directly from npm without installation:
-
-```bash
-PORT=3400 npx @kimuson/claude-code-viewer@latest
-```
-
-Alternatively, install globally:
-
-```bash
-npm install -g @kimuson/claude-code-viewer
-claude-code-viewer
-```
-
-The application uses pnpm as the package manager (v10.8.1) and is published as version 0.1.0.
-
-The server will start on port 3400 (or the specified PORT). Open `http://localhost:3400` in your browser.
-
-### Alternative Installation
+## Installation
 
 Clone and run locally:
 
