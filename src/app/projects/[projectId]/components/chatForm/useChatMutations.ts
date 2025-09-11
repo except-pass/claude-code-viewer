@@ -9,17 +9,20 @@ export const useNewChatMutation = (
   const router = useRouter();
 
   return useMutation({
-    mutationFn: async (options: { message: string }) => {
+    mutationFn: async (options: { message: string; createWorktree?: boolean }) => {
       const response = await honoClient.api.projects[":projectId"][
         "new-session"
       ].$post(
         {
           param: { projectId },
-          json: { message: options.message },
+          json: { 
+            message: options.message,
+            createWorktree: options.createWorktree ?? false
+          },
         },
         {
           init: {
-            signal: AbortSignal.timeout(20 * 1000),
+            signal: AbortSignal.timeout(30 * 1000), // Increased timeout for worktree creation
           },
         },
       );

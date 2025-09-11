@@ -1,6 +1,5 @@
 import { execFile } from "node:child_process";
 import { existsSync } from "node:fs";
-import { resolve } from "node:path";
 import { promisify } from "node:util";
 
 import type { GitError, GitResult } from "./types";
@@ -27,7 +26,8 @@ export async function executeGitCommand(
       };
     }
 
-    if (!existsSync(resolve(cwd, ".git"))) {
+    // Use async git repository check that supports worktrees
+    if (!(await isGitRepository(cwd))) {
       return {
         success: false,
         error: {
@@ -77,10 +77,25 @@ export async function executeGitCommand(
 }
 
 /**
- * Check if a directory is a git repository
+ * Check if a directory is a git repository (supports both regular repos and worktrees)
  */
-export function isGitRepository(cwd: string): boolean {
-  return existsSync(cwd) && existsSync(resolve(cwd, ".git"));
+export async function isGitRepository(cwd: string): Promise<boolean> {
+  if (!existsSync(cwd)) {
+    return false;
+  }
+
+  try {
+    // Use git rev-parse --git-dir to check for git repository
+    // This works for both regular repos and worktrees
+    const { stdout } = await execFileAsync("git", ["rev-parse", "--git-dir"], {
+      cwd,
+      timeout: 5000, // 5 second timeout
+    });
+    
+    return stdout.trim().length > 0;
+  } catch {
+    return false;
+  }
 }
 
 /**

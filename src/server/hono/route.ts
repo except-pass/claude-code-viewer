@@ -292,21 +292,45 @@ export const routes = (app: HonoAppType) => {
           "json",
           z.object({
             message: z.string(),
+            createWorktree: z.boolean().optional().default(false),
           }),
         ),
         async (c) => {
           const { projectId } = c.req.param();
-          const { message } = c.req.valid("json");
+          const { message, createWorktree } = c.req.valid("json");
           const { project } = await getProject(projectId);
+          const config = c.get("config");
 
           if (project.meta.projectPath === null) {
             return c.json({ error: "Project path not found" }, 400);
           }
 
+          let cwd = project.meta.projectPath;
+
+          if (createWorktree) {
+            try {
+              // Import worktree management functions
+              const { createWorktree: createWorktreeFunc, isGitRepository } = await import("../service/worktree/management");
+              
+              // Check if project is a git repository
+              if (!(await isGitRepository(project.meta.projectPath))) {
+                return c.json({ error: "Project is not a git repository" }, 400);
+              }
+
+              // Create worktree
+              cwd = await createWorktreeFunc(project.meta.projectPath, project.claudeProjectPath, config.worktreesPath);
+            } catch (error) {
+              console.error("Failed to create worktree:", error);
+              return c.json({ 
+                error: `Failed to create worktree: ${error instanceof Error ? error.message : String(error)}` 
+              }, 500);
+            }
+          }
+
           const task = await taskController.startOrContinueTask(
             {
               projectId,
-              cwd: project.meta.projectPath,
+              cwd,
             },
             message,
           );
@@ -315,6 +339,7 @@ export const routes = (app: HonoAppType) => {
             taskId: task.id,
             sessionId: task.sessionId,
             userMessageId: task.userMessageId,
+            worktreePath: createWorktree ? cwd : undefined,
           });
         },
       )

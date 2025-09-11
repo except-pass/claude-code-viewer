@@ -8,49 +8,42 @@ import type { Project } from "../types";
 
 /**
  * Checks if a project directory name indicates it's a worktree project
+ * Matches pattern: {project-name}-worktrees-{uuid} or --{path}--{project}-worktrees-{uuid}
  */
 export const isWorktreeProject = (projectDirName: string): boolean => {
-  return projectDirName.includes("-tinstar-worktrees-");
+  return projectDirName.includes("-worktrees-");
 };
 
 /**
- * Extracts the parent project path from a worktree project's metadata
- * Returns the original repository path that the worktree was created from
+ * Extracts the parent project path from a worktree project's Claude directory name
+ * Returns the corresponding parent project path in ~/.claude/projects/
  */
 export const findParentProjectPath = async (
   worktreeProjectPath: string,
 ): Promise<string | null> => {
   try {
-    const meta = await getProjectMeta(worktreeProjectPath);
-
-    if (!meta.projectPath || !meta.projectName) {
+    // Extract the directory name from the path
+    const worktreeProjectDirName = worktreeProjectPath.split('/').pop();
+    if (!worktreeProjectDirName || !isWorktreeProject(worktreeProjectDirName)) {
       return null;
     }
 
-    // The worktree's project path should be something like:
-    // /home/ubuntu/.tinstar/worktrees/{uuid}
-    // We need to find the original repo that this worktree was created from
-    if (meta.projectPath.includes("/.tinstar/worktrees/")) {
-      const projectName = meta.projectName;
-
-      // Look for a project with the same name but not in worktrees
-      const dirents = await readdir(claudeProjectPath, { withFileTypes: true });
-
-      for (const dirent of dirents) {
-        if (!dirent.isDirectory() || isWorktreeProject(dirent.name)) {
-          continue;
-        }
-
-        const candidatePath = resolve(dirent.parentPath, dirent.name);
-        const candidateMeta = await getProjectMeta(candidatePath);
-
-        if (candidateMeta.projectName === projectName) {
-          return candidatePath;
-        }
-      }
+    // Extract parent project name from worktree directory name
+    const parentProjectName = extractParentProjectNameFromWorktreePath(worktreeProjectDirName);
+    if (!parentProjectName) {
+      return null;
     }
 
-    return null;
+    // The parent project should exist in ~/.claude/projects/
+    const parentProjectPath = resolve(claudeProjectPath, parentProjectName);
+    
+    // Verify it exists and is not itself a worktree
+    try {
+      const meta = await getProjectMeta(parentProjectPath);
+      return meta ? parentProjectPath : null;
+    } catch {
+      return null;
+    }
   } catch {
     return null;
   }
@@ -60,18 +53,19 @@ export const findParentProjectPath = async (
  * Checks if a session is from a worktree based on its file path
  */
 export const isWorktreeSession = (sessionFilePath: string): boolean => {
-  return sessionFilePath.includes("-tinstar-worktrees-");
+  return sessionFilePath.includes("-worktrees-");
 };
 
 /**
  * Extracts the parent project name from a worktree directory name
- * Example: "-home-ubuntu--tinstar-worktrees-uuid" -> "tinstar"
+ * Example: "-home-ubuntu-repo-tinstar-worktrees-uuid" -> "-home-ubuntu-repo-tinstar"
+ * Example: "--home-ubuntu--tinstar-worktrees-uuid" -> "-home-ubuntu--tinstar"
  */
 export const extractParentProjectNameFromWorktreePath = (
   worktreeProjectDirName: string,
 ): string | null => {
-  // Pattern: -{path-with-dashes}--{project-name}-worktrees-{uuid}
-  const match = worktreeProjectDirName.match(/--(.+?)-worktrees-/);
+  // Pattern: {project-name}-worktrees-{uuid}
+  const match = worktreeProjectDirName.match(/^(.+)-worktrees-[^-]+$/);
   return match?.[1] ?? null;
 };
 
@@ -82,9 +76,9 @@ export const getWorktreeProjects = async (
   parentProjectPath: string,
 ): Promise<Project[]> => {
   try {
-    const parentMeta = await getProjectMeta(parentProjectPath);
-
-    if (!parentMeta.projectName) {
+    // Extract the parent project directory name
+    const parentProjectDirName = parentProjectPath.split('/').pop();
+    if (!parentProjectDirName) {
       return [];
     }
 
@@ -101,7 +95,7 @@ export const getWorktreeProjects = async (
         dirent.name,
       );
 
-      if (parentProjectName === parentMeta.projectName) {
+      if (parentProjectName === parentProjectDirName) {
         const worktreePath = resolve(dirent.parentPath, dirent.name);
         const id = encodeProjectId(worktreePath);
         const worktreeMeta = await getProjectMeta(worktreePath);
