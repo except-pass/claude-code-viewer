@@ -60,6 +60,12 @@ export const ConversationItem: FC<{
   }
 
   if (conversation.type === "user") {
+    if (!conversation.message) {
+      return (
+        <div className="text-muted-foreground text-sm">[Metadata entry]</div>
+      );
+    }
+
     const userConversationJsx =
       typeof conversation.message.content === "string" ? (
         <UserConversationContent

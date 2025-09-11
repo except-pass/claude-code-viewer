@@ -34,7 +34,7 @@ const getFirstCommand = (
     }
 
     const firstUserText =
-      conversation === null
+      conversation === null || !conversation.message
         ? null
         : typeof conversation.message.content === "string"
           ? conversation.message.content

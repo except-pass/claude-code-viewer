@@ -36,6 +36,10 @@ const sidechainTitle = (conversations: Conversation[]): string => {
     return defaultTitle;
   }
 
+  if (!firstConversation.message) {
+    return defaultTitle;
+  }
+
   const textContent =
     typeof firstConversation.message.content === "string"
       ? firstConversation.message.content

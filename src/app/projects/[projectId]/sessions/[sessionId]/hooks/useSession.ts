@@ -6,7 +6,7 @@ export const useSession = (projectId: string, sessionId: string) => {
 
   const toolResultMap = useMemo(() => {
     const entries = query.data.session.conversations.flatMap((conversation) => {
-      if (conversation.type !== "user") {
+      if (conversation.type !== "user" || !conversation.message) {
         return [];
       }
 

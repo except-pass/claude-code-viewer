@@ -26,11 +26,11 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 import { WorktreeBadge } from "@/components/ui/worktree-badge";
+import { isWorktreeSession } from "@/lib/worktree";
 import { useConfig } from "../../../hooks/useConfig";
 import { projectQueryConfig, useProject } from "../hooks/useProject";
 import { firstCommandToTitle } from "../services/firstCommandToTitle";
 import { NewChatModal } from "./newChat/NewChatModal";
-import { isWorktreeSession } from "@/lib/worktree";
 
 export const ProjectPageContent = ({ projectId }: { projectId: string }) => {
   const {

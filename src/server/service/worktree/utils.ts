@@ -23,20 +23,22 @@ export const findParentProjectPath = async (
 ): Promise<string | null> => {
   try {
     // Extract the directory name from the path
-    const worktreeProjectDirName = worktreeProjectPath.split('/').pop();
+    const worktreeProjectDirName = worktreeProjectPath.split("/").pop();
     if (!worktreeProjectDirName || !isWorktreeProject(worktreeProjectDirName)) {
       return null;
     }
 
     // Extract parent project name from worktree directory name
-    const parentProjectName = extractParentProjectNameFromWorktreePath(worktreeProjectDirName);
+    const parentProjectName = extractParentProjectNameFromWorktreePath(
+      worktreeProjectDirName,
+    );
     if (!parentProjectName) {
       return null;
     }
 
     // The parent project should exist in ~/.claude/projects/
     const parentProjectPath = resolve(claudeProjectPath, parentProjectName);
-    
+
     // Verify it exists and is not itself a worktree
     try {
       const meta = await getProjectMeta(parentProjectPath);
@@ -77,7 +79,7 @@ export const getWorktreeProjects = async (
 ): Promise<Project[]> => {
   try {
     // Extract the parent project directory name
-    const parentProjectDirName = parentProjectPath.split('/').pop();
+    const parentProjectDirName = parentProjectPath.split("/").pop();
     if (!parentProjectDirName) {
       return [];
     }

@@ -310,20 +310,31 @@ export const routes = (app: HonoAppType) => {
           if (createWorktree) {
             try {
               // Import worktree management functions
-              const { createWorktree: createWorktreeFunc, isGitRepository } = await import("../service/worktree/management");
-              
+              const { createWorktree: createWorktreeFunc, isGitRepository } =
+                await import("../service/worktree/management");
+
               // Check if project is a git repository
               if (!(await isGitRepository(project.meta.projectPath))) {
-                return c.json({ error: "Project is not a git repository" }, 400);
+                return c.json(
+                  { error: "Project is not a git repository" },
+                  400,
+                );
               }
 
               // Create worktree
-              cwd = await createWorktreeFunc(project.meta.projectPath, project.claudeProjectPath, config.worktreesPath);
+              cwd = await createWorktreeFunc(
+                project.meta.projectPath,
+                project.claudeProjectPath,
+                config.worktreesPath,
+              );
             } catch (error) {
               console.error("Failed to create worktree:", error);
-              return c.json({ 
-                error: `Failed to create worktree: ${error instanceof Error ? error.message : String(error)}` 
-              }, 500);
+              return c.json(
+                {
+                  error: `Failed to create worktree: ${error instanceof Error ? error.message : String(error)}`,
+                },
+                500,
+              );
             }
           }
 

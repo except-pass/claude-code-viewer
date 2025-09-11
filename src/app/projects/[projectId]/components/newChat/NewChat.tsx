@@ -1,4 +1,4 @@
-import { useState, type FC } from "react";
+import { type FC, useState } from "react";
 import { Checkbox } from "../../../../../components/ui/checkbox";
 import { ChatInput, useNewChatMutation } from "../chatForm";
 
@@ -40,7 +40,7 @@ export const NewChat: FC<{
           </div>
         )}
       </div>
-      
+
       <ChatInput
         projectId={projectId}
         onSubmit={handleSubmit}
@@ -48,10 +48,10 @@ export const NewChat: FC<{
         error={startNewChat.error}
         placeholder="Type your message here... (Start with / for commands, @ for files, Ctrl+Enter to send)"
         buttonText={
-          startNewChat.isPending && createWorktree 
-            ? "Creating Worktree..." 
-            : createWorktree 
-              ? "Start Chat in Worktree" 
+          startNewChat.isPending && createWorktree
+            ? "Creating Worktree..."
+            : createWorktree
+              ? "Start Chat in Worktree"
               : "Start Chat"
         }
         minHeight="min-h-[200px]"

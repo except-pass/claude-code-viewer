@@ -91,7 +91,7 @@ export async function isGitRepository(cwd: string): Promise<boolean> {
       cwd,
       timeout: 5000, // 5 second timeout
     });
-    
+
     return stdout.trim().length > 0;
   } catch {
     return false;

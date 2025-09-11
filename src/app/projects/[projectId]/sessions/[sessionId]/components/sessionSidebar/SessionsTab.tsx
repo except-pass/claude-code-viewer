@@ -10,12 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import { WorktreeBadge } from "@/components/ui/worktree-badge";
 import { cn } from "@/lib/utils";
+import { isWorktreeSession } from "@/lib/worktree";
 import type { Session } from "../../../../../../../server/service/types";
 import { NewChatModal } from "../../../../components/newChat/NewChatModal";
 import { firstCommandToTitle } from "../../../../services/firstCommandToTitle";
 import { aliveTasksAtom } from "../../store/aliveTasksAtom";
 import { showOldSessionsAtom } from "../../store/showOldSessionsAtom";
-import { isWorktreeSession } from "@/lib/worktree";
 
 export const SessionsTab: FC<{
   sessions: Session[];

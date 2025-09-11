@@ -9,15 +9,18 @@ export const useNewChatMutation = (
   const router = useRouter();
 
   return useMutation({
-    mutationFn: async (options: { message: string; createWorktree?: boolean }) => {
+    mutationFn: async (options: {
+      message: string;
+      createWorktree?: boolean;
+    }) => {
       const response = await honoClient.api.projects[":projectId"][
         "new-session"
       ].$post(
         {
           param: { projectId },
-          json: { 
+          json: {
             message: options.message,
-            createWorktree: options.createWorktree ?? false
+            createWorktree: options.createWorktree ?? false,
           },
         },
         {

@@ -210,7 +210,11 @@ export const ConversationList: FC<ConversationListProps> = ({
             }
 
             // Check for tool result errors in any conversation type
-            if ("message" in conversation && conversation.message.content) {
+            if (
+              "message" in conversation &&
+              conversation.message &&
+              conversation.message.content
+            ) {
               const content = Array.isArray(conversation.message.content)
                 ? conversation.message.content
                 : [conversation.message.content];

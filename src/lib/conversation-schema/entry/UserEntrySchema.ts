@@ -6,6 +6,9 @@ export const UserEntrySchema = BaseEntrySchema.extend({
   // discriminator
   type: z.literal("user"),
 
-  // required
-  message: UserMessageSchema,
+  // optional - some user entries may not have a message (metadata entries)
+  message: UserMessageSchema.optional(),
+
+  // optional fields for special user entries
+  isVisibleInTranscriptOnly: z.boolean().optional(),
 });

@@ -7,6 +7,8 @@ export const SystemEntrySchema = BaseEntrySchema.extend({
 
   // required
   content: z.string(),
-  toolUseID: z.string(),
   level: z.enum(["info"]),
+
+  // optional - some system entries may not have a toolUseID
+  toolUseID: z.string().optional(),
 });

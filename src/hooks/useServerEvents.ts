@@ -37,9 +37,7 @@ const parseSSEEvent = (text: string): ParsedEvent => {
   return {
     id: id.slice("id:".length).trim(),
     event: event.slice("event:".length).trim(),
-    data: JSON.parse(
-      data.slice("data:".length).trim(),
-    ) as SSEEvent,
+    data: JSON.parse(data.slice("data:".length).trim()) as SSEEvent,
   };
 };
 
