@@ -282,6 +282,72 @@ export const routes = (app: HonoAppType) => {
         },
       )
 
+      // Session-aware git routes
+      .get(
+        "/projects/:projectId/sessions/:sessionId/git/branches",
+        async (c) => {
+          const { projectId, sessionId } = c.req.param();
+
+          try {
+            const sessionCwd = await getSessionCwd(projectId, sessionId);
+            const result = await getBranches(sessionCwd);
+            return c.json(result);
+          } catch (error) {
+            console.error("Get session branches error:", error);
+            if (error instanceof Error) {
+              return c.json({ error: error.message }, 400);
+            }
+            return c.json({ error: "Failed to get session branches" }, 500);
+          }
+        },
+      )
+
+      .get(
+        "/projects/:projectId/sessions/:sessionId/git/commits",
+        async (c) => {
+          const { projectId, sessionId } = c.req.param();
+
+          try {
+            const sessionCwd = await getSessionCwd(projectId, sessionId);
+            const result = await getCommits(sessionCwd);
+            return c.json(result);
+          } catch (error) {
+            console.error("Get session commits error:", error);
+            if (error instanceof Error) {
+              return c.json({ error: error.message }, 400);
+            }
+            return c.json({ error: "Failed to get session commits" }, 500);
+          }
+        },
+      )
+
+      .post(
+        "/projects/:projectId/sessions/:sessionId/git/diff",
+        zValidator(
+          "json",
+          z.object({
+            fromRef: z.string().min(1, "fromRef is required"),
+            toRef: z.string().min(1, "toRef is required"),
+          }),
+        ),
+        async (c) => {
+          const { projectId, sessionId } = c.req.param();
+          const { fromRef, toRef } = c.req.valid("json");
+
+          try {
+            const sessionCwd = await getSessionCwd(projectId, sessionId);
+            const result = await getDiff(sessionCwd, fromRef, toRef);
+            return c.json(result);
+          } catch (error) {
+            console.error("Get session diff error:", error);
+            if (error instanceof Error) {
+              return c.json({ error: error.message }, 400);
+            }
+            return c.json({ error: "Failed to get session diff" }, 500);
+          }
+        },
+      )
+
       .get("/mcp/list", async (c) => {
         const { servers } = await getMcpList();
         return c.json({ servers });
@@ -359,7 +425,9 @@ export const routes = (app: HonoAppType) => {
             return c.json(
               {
                 error:
-                  error instanceof Error ? error.message : "Failed to start session",
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to start session",
               },
               500,
             );
@@ -407,7 +475,9 @@ export const routes = (app: HonoAppType) => {
             return c.json(
               {
                 error:
-                  error instanceof Error ? error.message : "Failed to resume session",
+                  error instanceof Error
+                    ? error.message
+                    : "Failed to resume session",
               },
               500,
             );

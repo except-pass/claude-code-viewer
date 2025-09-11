@@ -41,6 +41,7 @@ export interface DiffSummary {
 
 export interface DiffModalProps {
   projectId: string;
+  sessionId?: string;
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   defaultCompareFrom?: string;

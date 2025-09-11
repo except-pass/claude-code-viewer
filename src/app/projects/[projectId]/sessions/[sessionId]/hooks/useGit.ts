@@ -67,3 +67,87 @@ export const useGitDiff = () => {
     },
   });
 };
+
+// Session-aware git hooks
+export const useSessionGitBranches = (projectId: string, sessionId: string) => {
+  return useQuery({
+    queryKey: ["git", "branches", projectId, sessionId],
+    queryFn: async () => {
+      if (!sessionId || sessionId === "") {
+        throw new Error("No session ID provided");
+      }
+      
+      const response = await honoClient.api.projects[":projectId"].sessions[
+        ":sessionId"
+      ].git.branches.$get({
+        param: { projectId, sessionId },
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch session branches: ${response.statusText}`,
+        );
+      }
+
+      return response.json();
+    },
+    staleTime: 30000, // 30 seconds
+    enabled: Boolean(sessionId && sessionId !== ""), // Only run if sessionId is valid
+  });
+};
+
+export const useSessionGitCommits = (projectId: string, sessionId: string) => {
+  return useQuery({
+    queryKey: ["git", "commits", projectId, sessionId],
+    queryFn: async () => {
+      if (!sessionId || sessionId === "") {
+        throw new Error("No session ID provided");
+      }
+      
+      const response = await honoClient.api.projects[":projectId"].sessions[
+        ":sessionId"
+      ].git.commits.$get({
+        param: { projectId, sessionId },
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch session commits: ${response.statusText}`,
+        );
+      }
+
+      return response.json();
+    },
+    staleTime: 30000, // 30 seconds
+    enabled: Boolean(sessionId && sessionId !== ""), // Only run if sessionId is valid
+  });
+};
+
+export const useSessionGitDiff = () => {
+  return useMutation({
+    mutationFn: async ({
+      projectId,
+      sessionId,
+      fromRef,
+      toRef,
+    }: {
+      projectId: string;
+      sessionId: string;
+      fromRef: string;
+      toRef: string;
+    }) => {
+      const response = await honoClient.api.projects[":projectId"].sessions[
+        ":sessionId"
+      ].git.diff.$post({
+        param: { projectId, sessionId },
+        json: { fromRef, toRef },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to get session diff: ${response.statusText}`);
+      }
+
+      return response.json();
+    },
+  });
+};

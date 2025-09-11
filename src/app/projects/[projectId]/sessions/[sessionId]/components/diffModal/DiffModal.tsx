@@ -17,8 +17,18 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { WorktreeBadge } from "@/components/ui/worktree-badge";
 import { cn } from "@/lib/utils";
-import { useGitBranches, useGitCommits, useGitDiff } from "../../hooks/useGit";
+import { isWorktreeSession } from "@/lib/worktree";
+import {
+  useGitBranches,
+  useGitCommits,
+  useGitDiff,
+  useSessionGitBranches,
+  useSessionGitCommits,
+  useSessionGitDiff,
+} from "../../hooks/useGit";
+import { useSession } from "../../hooks/useSession";
 import { DiffViewer } from "./DiffViewer";
 import type { DiffModalProps, DiffSummary, GitRef } from "./types";
 
@@ -125,23 +135,41 @@ export const DiffModal: FC<DiffModalProps> = ({
   isOpen,
   onOpenChange,
   projectId,
+  sessionId,
   defaultCompareFrom = "HEAD",
   defaultCompareTo = "working",
 }) => {
   const [compareFrom, setCompareFrom] = useState(defaultCompareFrom);
   const [compareTo, setCompareTo] = useState(defaultCompareTo);
 
-  // API hooks
-  const { data: branchesData, isLoading: isLoadingBranches } =
-    useGitBranches(projectId);
-  const { data: commitsData, isLoading: isLoadingCommits } =
-    useGitCommits(projectId);
+  // Since we're in a session route, we always have sessionId from route params
+  // But the modal prop sessionId might be optional for backward compatibility
+  const actualSessionId = sessionId || "";
+  
+  // Always call all hooks unconditionally 
+  const sessionData = useSession(projectId, actualSessionId);
+  const projectBranches = useGitBranches(projectId);
+  const projectCommits = useGitCommits(projectId);
+  const projectDiff = useGitDiff();
+  const sessionBranches = useSessionGitBranches(projectId, actualSessionId);
+  const sessionCommits = useSessionGitCommits(projectId, actualSessionId);
+  const sessionDiff = useSessionGitDiff();
+  
+  // Check if we're in a worktree session
+  const isWorktree = sessionData?.session && isWorktreeSession(sessionData.session.jsonlFilePath);
+  const useSessionContext = Boolean(actualSessionId && isWorktree);
+
+  const { data: branchesData, isLoading: isLoadingBranches } = useSessionContext
+    ? sessionBranches
+    : projectBranches;
+  const { data: commitsData, isLoading: isLoadingCommits } = useSessionContext
+    ? sessionCommits
+    : projectCommits;
   const {
-    mutate: getDiff,
     data: diffData,
     isPending: isDiffLoading,
     error: diffError,
-  } = useGitDiff();
+  } = useSessionContext ? sessionDiff : projectDiff;
 
   // Transform branches and commits data to GitRef format
   const gitRefs: GitRef[] =
@@ -177,13 +205,30 @@ export const DiffModal: FC<DiffModalProps> = ({
 
   const loadDiff = useCallback(() => {
     if (compareFrom && compareTo && compareFrom !== compareTo) {
-      getDiff({
-        projectId,
-        fromRef: compareFrom,
-        toRef: compareTo,
-      });
+      if (useSessionContext && actualSessionId) {
+        sessionDiff.mutate({
+          projectId,
+          sessionId: actualSessionId,
+          fromRef: compareFrom,
+          toRef: compareTo,
+        });
+      } else {
+        projectDiff.mutate({
+          projectId,
+          fromRef: compareFrom,
+          toRef: compareTo,
+        });
+      }
     }
-  }, [compareFrom, compareTo, getDiff, projectId]);
+  }, [
+    compareFrom,
+    compareTo,
+    projectId,
+    actualSessionId,
+    useSessionContext,
+    sessionDiff.mutate,
+    projectDiff.mutate,
+  ]);
 
   useEffect(() => {
     if (isOpen && compareFrom && compareTo) {
@@ -199,7 +244,10 @@ export const DiffModal: FC<DiffModalProps> = ({
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-7xl w-[95vw] h-[90vh] overflow-hidden flex flex-col px-2 md:px-8">
         <DialogHeader>
-          <DialogTitle>Preview Changes</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            Preview Changes
+            {isWorktree && <WorktreeBadge />}
+          </DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col sm:flex-row gap-3 sm:items-end">

@@ -69,7 +69,7 @@ export const SessionPageContent: FC<{
   // Reset one-time auto-scroll flag when session changes
   useEffect(() => {
     hasAutoScrolledRef.current = false;
-  }, [sessionId]);
+  }, []);
 
   // Auto-scroll when switching to a new session (route param change within same component instance)
   useEffect(() => {
@@ -104,7 +104,7 @@ export const SessionPageContent: FC<{
       hasAutoScrolledRef.current = true;
     }, 0);
     return () => clearTimeout(id);
-  }, [conversations.length, sessionId]);
+  }, [conversations.length]);
 
   // 自動スクロール処理
   useEffect(() => {
@@ -277,6 +277,7 @@ export const SessionPageContent: FC<{
       {/* Diff Modal */}
       <DiffModal
         projectId={projectId}
+        sessionId={sessionId}
         isOpen={isDiffModalOpen}
         onOpenChange={setIsDiffModalOpen}
       />

@@ -1,7 +1,7 @@
-import { dirname } from "node:path";
 import { readFile } from "node:fs/promises";
-import { getProject } from "../project/getProject";
+import { dirname } from "node:path";
 import { parseJsonl } from "../parseJsonl";
+import { getProject } from "../project/getProject";
 import { getSession } from "./getSession";
 
 /**
@@ -53,5 +53,3 @@ export const getSessionCwd = async (
 
   return dirname(session.jsonlFilePath);
 };
-
-
