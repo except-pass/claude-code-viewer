@@ -63,6 +63,24 @@ export const SessionPageContent: FC<{
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isDiffModalOpen, setIsDiffModalOpen] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const [previousSessionId, setPreviousSessionId] = useState(sessionId);
+
+  // Auto-scroll when switching to a new session
+  useEffect(() => {
+    if (previousSessionId !== sessionId) {
+      setPreviousSessionId(sessionId);
+      const scrollContainer = scrollContainerRef.current;
+      if (scrollContainer) {
+        // Use setTimeout to ensure the content is fully rendered before scrolling
+        setTimeout(() => {
+          scrollContainer.scrollTo({
+            top: scrollContainer.scrollHeight,
+            behavior: "instant",
+          });
+        }, 0);
+      }
+    }
+  }, [sessionId, previousSessionId]);
 
   // 自動スクロール処理
   useEffect(() => {
