@@ -288,6 +288,7 @@ export const SessionPageContent: FC<{
       {/* Diff Modal */}
       <DiffModal
         projectId={projectId}
+        sessionId={sessionId}
         isOpen={isDiffModalOpen}
         onOpenChange={setIsDiffModalOpen}
       />
