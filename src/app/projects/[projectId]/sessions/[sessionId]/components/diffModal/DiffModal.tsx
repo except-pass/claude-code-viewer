@@ -139,10 +139,10 @@ export const DiffModal: FC<DiffModalProps> = ({
   onOpenChange,
   projectId,
   sessionId,
-  defaultCompareFrom,
+  defaultCompareFrom = "HEAD",
   defaultCompareTo = "working",
 }) => {
-  const [compareFrom, setCompareFrom] = useState(defaultCompareFrom || "");
+  const [compareFrom, setCompareFrom] = useState(defaultCompareFrom);
   const [compareTo, setCompareTo] = useState(defaultCompareTo);
   const [showCommitInput, setShowCommitInput] = useState(false);
   const [commitMessage, setCommitMessage] = useState("");
@@ -237,19 +237,6 @@ export const DiffModal: FC<DiffModalProps> = ({
     sessionDiff.mutate,
     projectDiff.mutate,
   ]);
-
-  // Set default compareFrom to current branch when branches data is available
-  useEffect(() => {
-    if (!defaultCompareFrom && branchesData?.success && branchesData.data && !compareFrom) {
-      const currentBranch = branchesData.data.find(branch => branch.current);
-      if (currentBranch) {
-        setCompareFrom(`branch:${currentBranch.name}`);
-      } else {
-        // Fallback to HEAD if no current branch found
-        setCompareFrom("HEAD");
-      }
-    }
-  }, [branchesData, defaultCompareFrom, compareFrom]);
 
   useEffect(() => {
     if (isOpen && compareFrom && compareTo) {
