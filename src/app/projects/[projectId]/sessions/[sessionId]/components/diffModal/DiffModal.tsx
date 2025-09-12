@@ -1,6 +1,6 @@
 "use client";
 
-import { FileText, GitBranch, Loader2, RefreshCcwIcon } from "lucide-react";
+import { FileText, GitBranch, Loader2, RefreshCcwIcon, Save } from "lucide-react";
 import type { FC } from "react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +10,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -23,9 +24,11 @@ import { isWorktreeSession } from "@/lib/worktree";
 import {
   useGitBranches,
   useGitCommits,
+  useGitCommit,
   useGitDiff,
   useSessionGitBranches,
   useSessionGitCommits,
+  useSessionGitCommit,
   useSessionGitDiff,
 } from "../../hooks/useGit";
 import { useSession } from "../../hooks/useSession";
@@ -136,11 +139,13 @@ export const DiffModal: FC<DiffModalProps> = ({
   onOpenChange,
   projectId,
   sessionId,
-  defaultCompareFrom = "HEAD",
+  defaultCompareFrom,
   defaultCompareTo = "working",
 }) => {
-  const [compareFrom, setCompareFrom] = useState(defaultCompareFrom);
+  const [compareFrom, setCompareFrom] = useState(defaultCompareFrom || "");
   const [compareTo, setCompareTo] = useState(defaultCompareTo);
+  const [showCommitInput, setShowCommitInput] = useState(false);
+  const [commitMessage, setCommitMessage] = useState("");
 
   // Since we're in a session route, we always have sessionId from route params
   // But the modal prop sessionId might be optional for backward compatibility
@@ -151,9 +156,11 @@ export const DiffModal: FC<DiffModalProps> = ({
   const projectBranches = useGitBranches(projectId);
   const projectCommits = useGitCommits(projectId);
   const projectDiff = useGitDiff();
+  const projectCommit = useGitCommit();
   const sessionBranches = useSessionGitBranches(projectId, actualSessionId);
   const sessionCommits = useSessionGitCommits(projectId, actualSessionId);
   const sessionDiff = useSessionGitDiff();
+  const sessionCommit = useSessionGitCommit();
   
   // Check if we're in a worktree session
   const isWorktree = sessionData?.session && isWorktreeSession(sessionData.session.jsonlFilePath);
@@ -231,6 +238,19 @@ export const DiffModal: FC<DiffModalProps> = ({
     projectDiff.mutate,
   ]);
 
+  // Set default compareFrom to current branch when branches data is available
+  useEffect(() => {
+    if (!defaultCompareFrom && branchesData?.success && branchesData.data && !compareFrom) {
+      const currentBranch = branchesData.data.find(branch => branch.current);
+      if (currentBranch) {
+        setCompareFrom(`branch:${currentBranch.name}`);
+      } else {
+        // Fallback to HEAD if no current branch found
+        setCompareFrom("HEAD");
+      }
+    }
+  }, [branchesData, defaultCompareFrom, compareFrom]);
+
   useEffect(() => {
     if (isOpen && compareFrom && compareTo) {
       loadDiff();
@@ -239,6 +259,55 @@ export const DiffModal: FC<DiffModalProps> = ({
 
   const handleCompare = () => {
     loadDiff();
+  };
+
+  const handleCommitClick = () => {
+    setShowCommitInput(true);
+  };
+
+  const handleCommitSubmit = useCallback(
+    async (e: React.FormEvent) => {
+      e.preventDefault();
+      if (!commitMessage.trim()) return;
+
+      try {
+        if (useSessionContext && actualSessionId) {
+          await sessionCommit.mutateAsync({
+            projectId,
+            sessionId: actualSessionId,
+            message: commitMessage.trim(),
+            allChanges: true,
+          });
+        } else {
+          await projectCommit.mutateAsync({
+            projectId,
+            message: commitMessage.trim(),
+            allChanges: true,
+          });
+        }
+
+        // Reset form and reload diff
+        setCommitMessage("");
+        setShowCommitInput(false);
+        loadDiff();
+      } catch (error) {
+        console.error("Failed to commit:", error);
+      }
+    },
+    [
+      commitMessage,
+      useSessionContext,
+      actualSessionId,
+      projectId,
+      sessionCommit,
+      projectCommit,
+      loadDiff,
+    ]
+  );
+
+  const handleCommitCancel = () => {
+    setCommitMessage("");
+    setShowCommitInput(false);
   };
 
   return (
@@ -284,26 +353,96 @@ export const DiffModal: FC<DiffModalProps> = ({
                   refs={gitRefs}
                 />
               </div>
-              <Button
-                onClick={handleCompare}
-                disabled={
-                  isDiffLoading ||
-                  isLoadingBranches ||
-                  isLoadingCommits ||
-                  compareFrom === compareTo
-                }
-                className="sm:self-end w-full sm:w-auto"
-              >
-                {isDiffLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Loading...
-                  </>
-                ) : (
-                  <RefreshCcwIcon className="w-4 h-4" />
+              <div className="flex gap-2 sm:self-end w-full sm:w-auto">
+                <Button
+                  onClick={handleCompare}
+                  disabled={
+                    isDiffLoading ||
+                    isLoadingBranches ||
+                    isLoadingCommits ||
+                    compareFrom === compareTo
+                  }
+                  className="flex-1 sm:flex-initial"
+                >
+                  {isDiffLoading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Loading...
+                    </>
+                  ) : (
+                    <RefreshCcwIcon className="w-4 h-4" />
+                  )}
+                </Button>
+                
+                {/* Only show save button if we have uncommitted changes (compareTo is "working") */}
+                {compareTo === "working" && (
+                  <Button
+                    onClick={handleCommitClick}
+                    disabled={
+                      isDiffLoading ||
+                      isLoadingBranches ||
+                      isLoadingCommits ||
+                      sessionCommit.isPending ||
+                      projectCommit.isPending
+                    }
+                    variant="outline"
+                    size="icon"
+                    title="Commit changes"
+                  >
+                    {(sessionCommit.isPending || projectCommit.isPending) ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                  </Button>
                 )}
-              </Button>
+              </div>
             </div>
+
+            {/* Commit message input */}
+            {showCommitInput && (
+              <form onSubmit={handleCommitSubmit} className="space-y-3">
+                <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
+                  <label htmlFor="commit-message" className="text-sm font-medium text-blue-900 dark:text-blue-100 block mb-2">
+                    Commit Message
+                  </label>
+                  <Input
+                    id="commit-message"
+                    type="text"
+                    value={commitMessage}
+                    onChange={(e) => setCommitMessage(e.target.value)}
+                    placeholder="Enter your commit message..."
+                    className="mb-3"
+                    autoFocus
+                  />
+                  <div className="flex gap-2 justify-end">
+                    <Button
+                      type="button"
+                      onClick={handleCommitCancel}
+                      variant="outline"
+                      size="sm"
+                      disabled={sessionCommit.isPending || projectCommit.isPending}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={!commitMessage.trim() || sessionCommit.isPending || projectCommit.isPending}
+                    >
+                      {(sessionCommit.isPending || projectCommit.isPending) ? (
+                        <>
+                          <Loader2 className="w-3 h-3 mr-1 animate-spin" />
+                          Committing...
+                        </>
+                      ) : (
+                        "Commit"
+                      )}
+                    </Button>
+                  </div>
+                </div>
+              </form>
+            )}
 
             {diffError && (
               <div className="bg-red-50 dark:bg-red-900/10 border border-red-200 dark:border-red-800 rounded-lg p-4">
@@ -348,6 +487,19 @@ export const DiffModal: FC<DiffModalProps> = ({
                         hunks: diff.hunks,
                         linesAdded: diff.file.additions,
                         linesDeleted: diff.file.deletions,
+                      }}
+                      showEditButton={true}
+                      onEditFile={(filePath) => {
+                        // Open file in cursor editor
+                        fetch("/api/cursor-open", {
+                          method: "POST",
+                          headers: {
+                            "Content-Type": "application/json",
+                          },
+                          body: JSON.stringify({ filePath }),
+                        }).catch((error) => {
+                          console.error("Failed to open file in cursor:", error);
+                        });
                       }}
                     />
                   ))}

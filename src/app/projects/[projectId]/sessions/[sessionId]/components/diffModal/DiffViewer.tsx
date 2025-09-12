@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDownIcon, ChevronRightIcon, CopyIcon } from "lucide-react";
+import { ChevronDownIcon, ChevronRightIcon, CopyIcon, EditIcon } from "lucide-react";
 import type { FC } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -11,6 +11,8 @@ import type { DiffHunk, FileDiff } from "./types";
 interface DiffViewerProps {
   fileDiff: FileDiff;
   className?: string;
+  onEditFile?: (filePath: string) => void;
+  showEditButton?: boolean;
 }
 
 interface DiffHunkProps {
@@ -104,12 +106,16 @@ interface FileHeaderProps {
   fileDiff: FileDiff;
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  onEditFile?: (filePath: string) => void;
+  showEditButton?: boolean;
 }
 
 const FileHeader: FC<FileHeaderProps> = ({
   fileDiff,
   isCollapsed,
   onToggleCollapse,
+  onEditFile,
+  showEditButton,
 }) => {
   const getFileStatusIcon = () => {
     if (fileDiff.isNew)
@@ -137,6 +143,11 @@ const FileHeader: FC<FileHeaderProps> = ({
       console.error("Failed to copy filename:", err);
       toast.error("ファイル名のコピーに失敗しました");
     }
+  };
+
+  const handleEditFile = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onEditFile?.(fileDiff.filename);
   };
 
   return (
@@ -174,22 +185,37 @@ const FileHeader: FC<FileHeaderProps> = ({
           </div>
         </div>
 
-        {/* Row 2: filename with copy button */}
+        {/* Row 2: filename with action buttons */}
         <div className="w-full flex items-center gap-2">
           <span className="font-mono text-sm font-medium text-black dark:text-white text-left truncate flex-1 min-w-0">
             {fileDiff.filename}
           </span>
-          <Button
-            asChild
-            onClick={handleCopyFilename}
-            variant="ghost"
-            size="sm"
-            className="flex-shrink-0 p-1 h-6 w-6 hover:bg-gray-200 dark:hover:bg-gray-600"
-          >
-            <span role="button" aria-label="Copy filename">
-              <CopyIcon className="w-3 h-3 text-gray-500 dark:text-gray-400" />
-            </span>
-          </Button>
+          <div className="flex items-center gap-1 flex-shrink-0">
+            {showEditButton && onEditFile && (
+              <Button
+                asChild
+                onClick={handleEditFile}
+                variant="ghost"
+                size="sm"
+                className="p-1 h-6 w-6 hover:bg-gray-200 dark:hover:bg-gray-600"
+              >
+                <span role="button" aria-label="Edit file">
+                  <EditIcon className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+                </span>
+              </Button>
+            )}
+            <Button
+              asChild
+              onClick={handleCopyFilename}
+              variant="ghost"
+              size="sm"
+              className="p-1 h-6 w-6 hover:bg-gray-200 dark:hover:bg-gray-600"
+            >
+              <span role="button" aria-label="Copy filename">
+                <CopyIcon className="w-3 h-3 text-gray-500 dark:text-gray-400" />
+              </span>
+            </Button>
+          </div>
         </div>
       </div>
       {fileDiff.isBinary && (
@@ -201,7 +227,7 @@ const FileHeader: FC<FileHeaderProps> = ({
   );
 };
 
-export const DiffViewer: FC<DiffViewerProps> = ({ fileDiff, className }) => {
+export const DiffViewer: FC<DiffViewerProps> = ({ fileDiff, className, onEditFile, showEditButton }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const toggleCollapse = () => {
@@ -220,6 +246,8 @@ export const DiffViewer: FC<DiffViewerProps> = ({ fileDiff, className }) => {
           fileDiff={fileDiff}
           isCollapsed={isCollapsed}
           onToggleCollapse={toggleCollapse}
+          onEditFile={onEditFile}
+          showEditButton={showEditButton}
         />
         {!isCollapsed && (
           <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
@@ -241,6 +269,8 @@ export const DiffViewer: FC<DiffViewerProps> = ({ fileDiff, className }) => {
         fileDiff={fileDiff}
         isCollapsed={isCollapsed}
         onToggleCollapse={toggleCollapse}
+        onEditFile={onEditFile}
+        showEditButton={showEditButton}
       />
       {!isCollapsed && (
         <div className="border-t border-gray-200 dark:border-gray-700">

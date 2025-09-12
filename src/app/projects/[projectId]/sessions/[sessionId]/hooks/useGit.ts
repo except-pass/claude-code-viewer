@@ -151,3 +151,61 @@ export const useSessionGitDiff = () => {
     },
   });
 };
+
+export const useGitCommit = () => {
+  return useMutation({
+    mutationFn: async ({
+      projectId,
+      message,
+      allChanges = true,
+      amend = false,
+    }: {
+      projectId: string;
+      message: string;
+      allChanges?: boolean;
+      amend?: boolean;
+    }) => {
+      const response = await honoClient.api.projects[":projectId"].git.commit.$post({
+        param: { projectId },
+        json: { message, allChanges, amend },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to commit: ${response.statusText}`);
+      }
+
+      return response.json();
+    },
+  });
+};
+
+export const useSessionGitCommit = () => {
+  return useMutation({
+    mutationFn: async ({
+      projectId,
+      sessionId,
+      message,
+      allChanges = true,
+      amend = false,
+    }: {
+      projectId: string;
+      sessionId: string;
+      message: string;
+      allChanges?: boolean;
+      amend?: boolean;
+    }) => {
+      const response = await honoClient.api.projects[":projectId"].sessions[
+        ":sessionId"
+      ].git.commit.$post({
+        param: { projectId, sessionId },
+        json: { message, allChanges, amend },
+      });
+
+      if (!response.ok) {
+        throw new Error(`Failed to commit: ${response.statusText}`);
+      }
+
+      return response.json();
+    },
+  });
+};

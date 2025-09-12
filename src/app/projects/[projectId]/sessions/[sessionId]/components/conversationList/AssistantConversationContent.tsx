@@ -1,11 +1,10 @@
-import { ChevronRight, Edit, Lightbulb, Settings } from "lucide-react";
+import { ChevronRight, Lightbulb, Settings } from "lucide-react";
 import Image from "next/image";
 import parseGitDiff from "parse-git-diff";
 import type { FC } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneLight } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -202,26 +201,6 @@ export const AssistantConversationContent: FC<{
 
     return (
       <Card className="border-blue-200 bg-blue-50/50 dark:border-blue-800 dark:bg-blue-950/20 gap-2 py-3 mb-2">
-        {/* Edit button for Edit/MultiEdit tools */}
-        {isEditTool && filePath && (
-          <div className="px-4 pt-3 pb-2 border-b border-blue-200/50">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={handleOpenInCursor}
-              className="h-auto p-2 text-blue-700 hover:text-blue-900 hover:bg-blue-100/50 dark:text-blue-300 dark:hover:text-blue-100 dark:hover:bg-blue-800/30"
-            >
-              <Edit className="h-3 w-3 mr-1" />
-              <span
-                className="text-xs font-mono truncate max-w-[200px]"
-                title={filePath}
-              >
-                {filePath.split("/").pop() || filePath}
-              </span>
-            </Button>
-          </div>
-        )}
-
         <CardHeader className="py-0 px-4">
           <div className="flex items-center gap-2">
             <Settings className="h-4 w-4 text-blue-600 dark:text-blue-400" />
@@ -319,7 +298,11 @@ export const AssistantConversationContent: FC<{
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="mt-2">
-                      <DiffViewer fileDiff={fileDiff} />
+                      <DiffViewer 
+                        fileDiff={fileDiff} 
+                        onEditFile={handleOpenInCursor}
+                        showEditButton={true}
+                      />
                     </div>
                   </CollapsibleContent>
                 </Collapsible>

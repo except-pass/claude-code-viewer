@@ -15,6 +15,7 @@ import { sseEventResponse } from "../service/events/sseEventResponse";
 import { getFileCompletion } from "../service/file-completion/getFileCompletion";
 import { getBranches } from "../service/git/getBranches";
 import { getCommits } from "../service/git/getCommits";
+import { commit } from "../service/git/commit";
 import { getDiff } from "../service/git/getDiff";
 import { getMcpList } from "../service/mcp/getMcpList";
 import { getProject } from "../service/project/getProject";
@@ -282,6 +283,42 @@ export const routes = (app: HonoAppType) => {
         },
       )
 
+      .post(
+        "/projects/:projectId/git/commit",
+        zValidator(
+          "json",
+          z.object({
+            message: z.string().min(1, "Commit message is required"),
+            allChanges: z.boolean().optional().default(false),
+            amend: z.boolean().optional().default(false),
+          }),
+        ),
+        async (c) => {
+          const { projectId } = c.req.param();
+          const { message, allChanges, amend } = c.req.valid("json");
+          const { project } = await getProject(projectId);
+
+          if (project.meta.projectPath === null) {
+            return c.json({ error: "Project path not found" }, 400);
+          }
+
+          try {
+            const result = await commit(project.meta.projectPath, {
+              message,
+              allChanges,
+              amend,
+            });
+            return c.json(result);
+          } catch (error) {
+            console.error("Git commit error:", error);
+            if (error instanceof Error) {
+              return c.json({ error: error.message }, 400);
+            }
+            return c.json({ error: "Failed to commit" }, 500);
+          }
+        },
+      )
+
       // Session-aware git routes
       .get(
         "/projects/:projectId/sessions/:sessionId/git/branches",
@@ -344,6 +381,38 @@ export const routes = (app: HonoAppType) => {
               return c.json({ error: error.message }, 400);
             }
             return c.json({ error: "Failed to get session diff" }, 500);
+          }
+        },
+      )
+
+      .post(
+        "/projects/:projectId/sessions/:sessionId/git/commit",
+        zValidator(
+          "json",
+          z.object({
+            message: z.string().min(1, "Commit message is required"),
+            allChanges: z.boolean().optional().default(false),
+            amend: z.boolean().optional().default(false),
+          }),
+        ),
+        async (c) => {
+          const { projectId, sessionId } = c.req.param();
+          const { message, allChanges, amend } = c.req.valid("json");
+
+          try {
+            const sessionCwd = await getSessionCwd(projectId, sessionId);
+            const result = await commit(sessionCwd, {
+              message,
+              allChanges,
+              amend,
+            });
+            return c.json(result);
+          } catch (error) {
+            console.error("Git session commit error:", error);
+            if (error instanceof Error) {
+              return c.json({ error: error.message }, 400);
+            }
+            return c.json({ error: "Failed to commit" }, 500);
           }
         },
       )

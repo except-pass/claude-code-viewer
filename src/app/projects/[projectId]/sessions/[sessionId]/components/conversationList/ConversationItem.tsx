@@ -8,6 +8,55 @@ import { SummaryConversationContent } from "./SummaryConversationContent";
 import { SystemConversationContent } from "./SystemConversationContent";
 import { UserConversationContent } from "./UserConversationContent";
 
+const getUserContentKey = (
+  content: unknown,
+  index: number,
+  conversationUuid: string,
+) => {
+  if (typeof content === "string") {
+    return `user_${conversationUuid}_text_${index}`;
+  }
+
+  if (content && typeof content === "object" && "type" in content) {
+    const c = content as any;
+    if (c.type === "tool_result") {
+      return `user_${conversationUuid}_tool_result_${c.tool_use_id}_${index}`;
+    }
+    if (c.type === "image") {
+      return `user_${conversationUuid}_image_${index}`;
+    }
+    if (c.type === "text") {
+      return `user_${conversationUuid}_text_${index}`;
+    }
+  }
+
+  return `user_${conversationUuid}_content_${index}`;
+};
+
+const getAssistantContentKey = (
+  content: unknown,
+  index: number,
+  conversationUuid: string,
+) => {
+  if (content && typeof content === "object" && "type" in content) {
+    const c = content as any;
+    if (c.type === "tool_use") {
+      return `assistant_${conversationUuid}_tool_use_${c.id}`;
+    }
+    if (c.type === "tool_result") {
+      return `assistant_${conversationUuid}_tool_result_${c.tool_use_id}_${index}`;
+    }
+    if (c.type === "text") {
+      return `assistant_${conversationUuid}_text_${index}`;
+    }
+    if (c.type === "thinking") {
+      return `assistant_${conversationUuid}_thinking_${index}`;
+    }
+  }
+
+  return `assistant_${conversationUuid}_content_${index}`;
+};
+
 export const ConversationItem: FC<{
   conversation: Conversation;
   getToolResult: (toolUseId: string) => ToolResultContent | undefined;
@@ -74,8 +123,10 @@ export const ConversationItem: FC<{
         />
       ) : (
         <ul className="w-full" id={`message-${conversation.uuid}`}>
-          {conversation.message.content.map((content) => (
-            <li key={content.toString()}>
+          {conversation.message.content.map((content, index) => (
+            <li
+              key={getUserContentKey(content as unknown, index, conversation.uuid)}
+            >
               <UserConversationContent content={content} />
             </li>
           ))}
@@ -93,8 +144,14 @@ export const ConversationItem: FC<{
   if (conversation.type === "assistant") {
     return (
       <ul className="w-full">
-        {conversation.message.content.map((content) => (
-          <li key={content.toString()}>
+        {conversation.message.content.map((content, index) => (
+          <li
+            key={getAssistantContentKey(
+              content as unknown,
+              index,
+              conversation.uuid,
+            )}
+          >
             <AssistantConversationContent
               content={content}
               getToolResult={getToolResult}

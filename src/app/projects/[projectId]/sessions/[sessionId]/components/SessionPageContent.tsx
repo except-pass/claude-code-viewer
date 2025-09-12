@@ -18,7 +18,6 @@ import { Badge } from "../../../../../../components/ui/badge";
 import { honoClient } from "../../../../../../lib/api/client";
 import { cn } from "@/lib/utils";
 import {
-  extractWorktreeUuid,
   isWorktreeSession,
 } from "../../../../../../lib/worktree-utils";
 import { WorktreeBadge } from "../../../../../../components/ui/worktree-badge";
@@ -64,30 +63,77 @@ export const SessionPageContent: FC<{
     useState(0);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
   const [isDiffModalOpen, setIsDiffModalOpen] = useState(false);
+  const [isAutoScrollEnabled, setIsAutoScrollEnabled] = useState(true);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const [previousSessionId, setPreviousSessionId] = useState(sessionId);
   const hasAutoScrolledRef = useRef(false);
+  const isUserScrollingRef = useRef(false);
+  const isContentUpdatingRef = useRef(false);
 
-  // Reset one-time auto-scroll flag when session changes
+  // Reset auto-scroll state when session changes
   useEffect(() => {
     hasAutoScrolledRef.current = false;
+    setIsAutoScrollEnabled(true);
+  }, [sessionId]);
+
+  // Utility functions for scroll detection
+  const isAtBottom = () => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return false;
+    return (
+      scrollContainer.scrollTop + scrollContainer.clientHeight >= 
+      scrollContainer.scrollHeight - 10
+    );
+  };
+
+  const scrollToBottom = (behavior: ScrollBehavior = "smooth") => {
+    const scrollContainer = scrollContainerRef.current;
+    if (scrollContainer) {
+      scrollContainer.scrollTo({
+        top: scrollContainer.scrollHeight,
+        behavior,
+      });
+    }
+  };
+
+  // Scroll event listener to detect user scroll behavior
+  useEffect(() => {
+    const scrollContainer = scrollContainerRef.current;
+    if (!scrollContainer) return;
+
+    const handleScroll = () => {
+      // Ignore programmatic scrolls and content updates
+      if (isUserScrollingRef.current || isContentUpdatingRef.current) return;
+      
+      if (isAtBottom()) {
+        // User scrolled to bottom, enable auto-scroll
+        setIsAutoScrollEnabled(true);
+      } else {
+        // User scrolled up, disable auto-scroll
+        setIsAutoScrollEnabled(false);
+      }
+    };
+
+    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
+    
+    return () => {
+      scrollContainer.removeEventListener('scroll', handleScroll);
+    };
   }, []);
 
   // Auto-scroll when switching to a new session (route param change within same component instance)
   useEffect(() => {
     if (previousSessionId !== sessionId) {
       setPreviousSessionId(sessionId);
-      const scrollContainer = scrollContainerRef.current;
-      if (scrollContainer) {
-        // Use setTimeout to ensure the content is fully rendered before scrolling
+      // Use setTimeout to ensure the content is fully rendered before scrolling
+      setTimeout(() => {
+        isUserScrollingRef.current = true;
+        scrollToBottom("auto");
+        hasAutoScrolledRef.current = true;
         setTimeout(() => {
-          scrollContainer.scrollTo({
-            top: scrollContainer.scrollHeight,
-            behavior: "auto",
-          });
-          hasAutoScrolledRef.current = true;
-        }, 0);
-      }
+          isUserScrollingRef.current = false;
+        }, 100);
+      }, 0);
     }
   }, [sessionId, previousSessionId]);
 
@@ -95,35 +141,45 @@ export const SessionPageContent: FC<{
   useEffect(() => {
     if (hasAutoScrolledRef.current) return;
     if (conversations.length === 0) return;
-    const scrollContainer = scrollContainerRef.current;
-    if (!scrollContainer) return;
+    
     // Next tick to ensure layout is complete
     const id = setTimeout(() => {
-      scrollContainer.scrollTo({
-        top: scrollContainer.scrollHeight,
-        behavior: "auto",
-      });
+      isUserScrollingRef.current = true;
+      scrollToBottom("auto");
       hasAutoScrolledRef.current = true;
+      setTimeout(() => {
+        isUserScrollingRef.current = false;
+      }, 100);
     }, 0);
     return () => clearTimeout(id);
   }, [conversations.length]);
 
-  // 自動スクロール処理
+  // New conversation auto-scroll logic
   useEffect(() => {
     if (
       (isRunningTask || isPausedTask) &&
       conversations.length !== previousConversationLength
     ) {
       setPreviousConversationLength(conversations.length);
-      const scrollContainer = scrollContainerRef.current;
-      if (scrollContainer) {
-        scrollContainer.scrollTo({
-          top: scrollContainer.scrollHeight,
-          behavior: "smooth",
-        });
+      
+      if (isAutoScrollEnabled) {
+        // Mark that content is updating to prevent scroll events from toggling auto-scroll
+        isContentUpdatingRef.current = true;
+        isUserScrollingRef.current = true;
+        
+        scrollToBottom("smooth");
+        
+        // Clear flags after content has settled
+        setTimeout(() => {
+          isUserScrollingRef.current = false;
+          // Give extra time for content to fully render and scroll to complete
+          setTimeout(() => {
+            isContentUpdatingRef.current = false;
+          }, 200);
+        }, 100);
       }
     }
-  }, [conversations, isRunningTask, isPausedTask, previousConversationLength]);
+  }, [conversations, isRunningTask, isPausedTask, previousConversationLength, isAutoScrollEnabled]);
 
   return (
     <div className="flex h-screen max-h-screen overflow-hidden">
@@ -176,6 +232,45 @@ export const SessionPageContent: FC<{
               >
                 claude session: {sessionId}
               </Badge>
+              
+              {/* Auto-scroll toggle */}
+              <div className="flex items-center gap-2">
+                <span className="text-xs text-muted-foreground hidden sm:inline">
+                  Auto-scroll
+                </span>
+                <button
+                  onClick={() => {
+                    if (!isAutoScrollEnabled) {
+                      setIsAutoScrollEnabled(true);
+                      isUserScrollingRef.current = true;
+                      scrollToBottom("smooth");
+                      setTimeout(() => {
+                        isUserScrollingRef.current = false;
+                      }, 100);
+                    } else {
+                      setIsAutoScrollEnabled(false);
+                    }
+                  }}
+                  className={cn(
+                    "relative inline-flex h-5 w-9 sm:h-6 sm:w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/20",
+                    isAutoScrollEnabled 
+                      ? "bg-green-500" 
+                      : "bg-gray-200"
+                  )}
+                  role="switch"
+                  aria-checked={isAutoScrollEnabled}
+                  title={isAutoScrollEnabled ? "Auto-scroll enabled" : "Auto-scroll disabled"}
+                >
+                  <span
+                    className={cn(
+                      "pointer-events-none inline-block h-4 w-4 sm:h-5 sm:w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
+                      isAutoScrollEnabled 
+                        ? "translate-x-4 sm:translate-x-5" 
+                        : "translate-x-0"
+                    )}
+                  />
+                </button>
+              </div>
               {isWorktreeSession(session.jsonlFilePath) && (
                 <WorktreeBadge
                   className="h-6 sm:h-8 text-xs sm:text-sm"
