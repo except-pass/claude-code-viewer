@@ -1,9 +1,9 @@
-import { readFile, access } from "node:fs/promises";
+import { access, readFile } from "node:fs/promises";
 import { dirname } from "node:path";
 import { parseJsonl } from "../parseJsonl";
 import { getProject } from "../project/getProject";
-import { getSession } from "./getSession";
 import { isWorktreeSession } from "../worktree/utils";
+import { getSession } from "./getSession";
 
 /**
  * Checks if a worktree session is orphaned (worktree directory no longer exists)

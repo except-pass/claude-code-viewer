@@ -1,6 +1,11 @@
 "use client";
 
-import { ChevronDownIcon, ChevronRightIcon, CopyIcon, EditIcon } from "lucide-react";
+import {
+  ChevronDownIcon,
+  ChevronRightIcon,
+  CopyIcon,
+  EditIcon,
+} from "lucide-react";
 import type { FC } from "react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -227,7 +232,12 @@ const FileHeader: FC<FileHeaderProps> = ({
   );
 };
 
-export const DiffViewer: FC<DiffViewerProps> = ({ fileDiff, className, onEditFile, showEditButton }) => {
+export const DiffViewer: FC<DiffViewerProps> = ({
+  fileDiff,
+  className,
+  onEditFile,
+  showEditButton,
+}) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   const toggleCollapse = () => {

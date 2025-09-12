@@ -298,8 +298,8 @@ export const AssistantConversationContent: FC<{
                   </CollapsibleTrigger>
                   <CollapsibleContent>
                     <div className="mt-2">
-                      <DiffViewer 
-                        fileDiff={fileDiff} 
+                      <DiffViewer
+                        fileDiff={fileDiff}
                         onEditFile={handleOpenInCursor}
                         showEditButton={true}
                       />

@@ -125,7 +125,11 @@ export const ConversationItem: FC<{
         <ul className="w-full" id={`message-${conversation.uuid}`}>
           {conversation.message.content.map((content, index) => (
             <li
-              key={getUserContentKey(content as unknown, index, conversation.uuid)}
+              key={getUserContentKey(
+                content as unknown,
+                index,
+                conversation.uuid,
+              )}
             >
               <UserConversationContent content={content} />
             </li>

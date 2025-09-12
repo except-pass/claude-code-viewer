@@ -13,9 +13,9 @@ import { getEventBus } from "../service/events/EventBus";
 import { getFileWatcher } from "../service/events/fileWatcher";
 import { sseEventResponse } from "../service/events/sseEventResponse";
 import { getFileCompletion } from "../service/file-completion/getFileCompletion";
+import { commit } from "../service/git/commit";
 import { getBranches } from "../service/git/getBranches";
 import { getCommits } from "../service/git/getCommits";
-import { commit } from "../service/git/commit";
 import { getDiff } from "../service/git/getDiff";
 import { getMcpList } from "../service/mcp/getMcpList";
 import { getProject } from "../service/project/getProject";
@@ -140,6 +140,19 @@ export const routes = (app: HonoAppType) => {
         const { projectId, sessionId } = c.req.param();
         const { session } = await getSession(projectId, sessionId);
         return c.json({ session });
+      })
+
+      .get("/projects/:projectId/sessions/:sessionId/cwd", async (c) => {
+        const { projectId, sessionId } = c.req.param();
+        try {
+          const cwd = await getSessionCwd(projectId, sessionId);
+          return c.json({ cwd });
+        } catch (_error) {
+          return c.json(
+            { error: "Failed to get session working directory" },
+            500,
+          );
+        }
       })
 
       .get(

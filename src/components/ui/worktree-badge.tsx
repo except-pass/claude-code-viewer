@@ -7,7 +7,11 @@ interface WorktreeBadgeProps {
   isOrphaned?: boolean;
 }
 
-export function WorktreeBadge({ className, isDirty, isOrphaned }: WorktreeBadgeProps) {
+export function WorktreeBadge({
+  className,
+  isDirty,
+  isOrphaned,
+}: WorktreeBadgeProps) {
   if (isOrphaned) {
     return (
       <Badge
@@ -23,8 +27,8 @@ export function WorktreeBadge({ className, isDirty, isOrphaned }: WorktreeBadgeP
     );
   }
 
-  const title = isDirty 
-    ? "Worktree has uncommitted changes" 
+  const title = isDirty
+    ? "Worktree has uncommitted changes"
     : "Worktree is clean";
 
   return (

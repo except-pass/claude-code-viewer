@@ -76,7 +76,7 @@ export const useSessionGitBranches = (projectId: string, sessionId: string) => {
       if (!sessionId || sessionId === "") {
         throw new Error("No session ID provided");
       }
-      
+
       const response = await honoClient.api.projects[":projectId"].sessions[
         ":sessionId"
       ].git.branches.$get({
@@ -103,7 +103,7 @@ export const useSessionGitCommits = (projectId: string, sessionId: string) => {
       if (!sessionId || sessionId === "") {
         throw new Error("No session ID provided");
       }
-      
+
       const response = await honoClient.api.projects[":projectId"].sessions[
         ":sessionId"
       ].git.commits.$get({
@@ -165,7 +165,9 @@ export const useGitCommit = () => {
       allChanges?: boolean;
       amend?: boolean;
     }) => {
-      const response = await honoClient.api.projects[":projectId"].git.commit.$post({
+      const response = await honoClient.api.projects[
+        ":projectId"
+      ].git.commit.$post({
         param: { projectId },
         json: { message, allChanges, amend },
       });

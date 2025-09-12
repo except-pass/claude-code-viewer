@@ -30,15 +30,15 @@ export async function commit(
 
     // Build commit command
     const commitArgs = ["commit"];
-    
+
     if (options.amend) {
       commitArgs.push("--amend");
     }
-    
+
     commitArgs.push("-m", options.message);
 
     const result = await executeGitCommand(commitArgs, cwd);
-    
+
     if (!result.success) {
       return result;
     }
@@ -78,7 +78,7 @@ export async function addFiles(
   files: string[] = ["."],
 ): Promise<GitResult<void>> {
   const result = await executeGitCommand(["add", ...files], cwd);
-  
+
   if (!result.success) {
     return result;
   }

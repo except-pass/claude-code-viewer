@@ -33,7 +33,8 @@ export const ResumeChat: FC<{
             <div>
               <p className="font-medium text-sm">Chat Disabled</p>
               <p className="text-xs">
-                This worktree has been removed. New messages cannot be sent to orphaned sessions.
+                This worktree has been removed. New messages cannot be sent to
+                orphaned sessions.
               </p>
             </div>
           </div>

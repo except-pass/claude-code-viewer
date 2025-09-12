@@ -211,7 +211,7 @@ export const ConversationList: FC<ConversationListProps> = ({
                 }
                 return null;
               };
-              
+
               const cmdName = getBashCommandName(content.input);
               return cmdName ? `Bash-${cmdName}` : "Bash";
             }

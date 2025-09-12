@@ -60,17 +60,17 @@ export const getSessions = async (
 
   // Combine main and worktree sessions, removing duplicates by session ID
   const sessionMap = new Map<string, Session>();
-  
+
   // Add main sessions first
   for (const session of mainSessions) {
     sessionMap.set(session.id, session);
   }
-  
+
   // Add worktree sessions (they will override if same ID exists)
   for (const session of worktreeSessions) {
     sessionMap.set(session.id, session);
   }
-  
+
   const allSessions = Array.from(sessionMap.values());
 
   return {

@@ -2,6 +2,7 @@
 
 import { useMutation } from "@tanstack/react-query";
 import {
+  CopyIcon,
   ExternalLinkIcon,
   GitCompareIcon,
   LoaderIcon,
@@ -12,19 +13,19 @@ import {
 import Link from "next/link";
 import type { FC } from "react";
 import { useEffect, useRef, useState } from "react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { useTaskNotifications } from "@/hooks/useTaskNotifications";
-import { Badge } from "../../../../../../components/ui/badge";
-import { honoClient } from "../../../../../../lib/api/client";
 import { cn } from "@/lib/utils";
-import {
-  isWorktreeSession,
-} from "../../../../../../lib/worktree-utils";
+import { Badge } from "../../../../../../components/ui/badge";
 import { WorktreeBadge } from "../../../../../../components/ui/worktree-badge";
+import { honoClient } from "../../../../../../lib/api/client";
+import { isWorktreeSession } from "../../../../../../lib/worktree-utils";
 import { useProject } from "../../../hooks/useProject";
 import { firstCommandToTitle } from "../../../services/firstCommandToTitle";
 import { useAliveTask } from "../hooks/useAliveTask";
 import { useSession } from "../hooks/useSession";
+import { useSessionCwd } from "../hooks/useSessionCwd";
 import { ConversationList } from "./conversationList/ConversationList";
 import { DiffModal } from "./diffModal";
 import { ResumeChat } from "./resumeChat/ResumeChat";
@@ -39,6 +40,7 @@ export const SessionPageContent: FC<{
     sessionId,
   );
   const { data: project } = useProject(projectId);
+  const { data: sessionCwd } = useSessionCwd(projectId, sessionId);
 
   const abortTask = useMutation({
     mutationFn: async (sessionId: string) => {
@@ -59,6 +61,25 @@ export const SessionPageContent: FC<{
   // Set up task completion notifications
   useTaskNotifications(isRunningTask);
 
+  // Copy resume command to clipboard
+  const copyResumeCommand = async () => {
+    if (!sessionCwd) {
+      toast.error("Working directory not available");
+      return;
+    }
+
+    const command = `cd "${sessionCwd}" && claude -r ${sessionId}`;
+
+    try {
+      await navigator.clipboard.writeText(command);
+      toast.success(
+        "Resume command copied! Go to your terminal and paste to resume the session.",
+      );
+    } catch (_error) {
+      toast.error("Failed to copy command to clipboard");
+    }
+  };
+
   const [previousConversationLength, setPreviousConversationLength] =
     useState(0);
   const [isMobileSidebarOpen, setIsMobileSidebarOpen] = useState(false);
@@ -74,14 +95,14 @@ export const SessionPageContent: FC<{
   useEffect(() => {
     hasAutoScrolledRef.current = false;
     setIsAutoScrollEnabled(true);
-  }, [sessionId]);
+  }, []);
 
   // Utility functions for scroll detection
   const isAtBottom = () => {
     const scrollContainer = scrollContainerRef.current;
     if (!scrollContainer) return false;
     return (
-      scrollContainer.scrollTop + scrollContainer.clientHeight >= 
+      scrollContainer.scrollTop + scrollContainer.clientHeight >=
       scrollContainer.scrollHeight - 10
     );
   };
@@ -104,7 +125,7 @@ export const SessionPageContent: FC<{
     const handleScroll = () => {
       // Ignore programmatic scrolls and content updates
       if (isUserScrollingRef.current || isContentUpdatingRef.current) return;
-      
+
       if (isAtBottom()) {
         // User scrolled to bottom, enable auto-scroll
         setIsAutoScrollEnabled(true);
@@ -114,12 +135,12 @@ export const SessionPageContent: FC<{
       }
     };
 
-    scrollContainer.addEventListener('scroll', handleScroll, { passive: true });
-    
+    scrollContainer.addEventListener("scroll", handleScroll, { passive: true });
+
     return () => {
-      scrollContainer.removeEventListener('scroll', handleScroll);
+      scrollContainer.removeEventListener("scroll", handleScroll);
     };
-  }, []);
+  }, [isAtBottom]);
 
   // Auto-scroll when switching to a new session (route param change within same component instance)
   useEffect(() => {
@@ -135,13 +156,13 @@ export const SessionPageContent: FC<{
         }, 100);
       }, 0);
     }
-  }, [sessionId, previousSessionId]);
+  }, [sessionId, previousSessionId, scrollToBottom]);
 
   // Auto-scroll on initial mount after conversations render (covers remounts on navigation)
   useEffect(() => {
     if (hasAutoScrolledRef.current) return;
     if (conversations.length === 0) return;
-    
+
     // Next tick to ensure layout is complete
     const id = setTimeout(() => {
       isUserScrollingRef.current = true;
@@ -152,7 +173,7 @@ export const SessionPageContent: FC<{
       }, 100);
     }, 0);
     return () => clearTimeout(id);
-  }, [conversations.length]);
+  }, [conversations.length, scrollToBottom]);
 
   // New conversation auto-scroll logic
   useEffect(() => {
@@ -161,14 +182,14 @@ export const SessionPageContent: FC<{
       conversations.length !== previousConversationLength
     ) {
       setPreviousConversationLength(conversations.length);
-      
+
       if (isAutoScrollEnabled) {
         // Mark that content is updating to prevent scroll events from toggling auto-scroll
         isContentUpdatingRef.current = true;
         isUserScrollingRef.current = true;
-        
+
         scrollToBottom("smooth");
-        
+
         // Clear flags after content has settled
         setTimeout(() => {
           isUserScrollingRef.current = false;
@@ -179,7 +200,14 @@ export const SessionPageContent: FC<{
         }, 100);
       }
     }
-  }, [conversations, isRunningTask, isPausedTask, previousConversationLength, isAutoScrollEnabled]);
+  }, [
+    conversations,
+    isRunningTask,
+    isPausedTask,
+    previousConversationLength,
+    isAutoScrollEnabled,
+    scrollToBottom,
+  ]);
 
   return (
     <div className="flex h-screen max-h-screen overflow-hidden">
@@ -226,13 +254,18 @@ export const SessionPageContent: FC<{
                   </Badge>
                 </Link>
               )}
-              <Badge
+              <Button
                 variant="secondary"
-                className="h-6 sm:h-8 text-xs sm:text-sm flex items-center"
+                size="sm"
+                onClick={copyResumeCommand}
+                disabled={!sessionCwd}
+                className="h-6 sm:h-8 text-xs sm:text-sm flex items-center gap-1 px-2 sm:px-3 hover:bg-blue-50/60 hover:border-blue-300/60 hover:shadow-sm transition-all duration-200"
+                title="Click to copy resume command"
               >
-                claude session: {sessionId}
-              </Badge>
-              
+                <span>💻 Session: {sessionId}</span>
+                <CopyIcon className="w-3 h-3 opacity-70" />
+              </Button>
+
               {/* Auto-scroll toggle */}
               <div className="flex items-center gap-2">
                 <span className="text-xs text-muted-foreground hidden sm:inline">
@@ -253,20 +286,22 @@ export const SessionPageContent: FC<{
                   }}
                   className={cn(
                     "relative inline-flex h-5 w-9 sm:h-6 sm:w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary/20",
-                    isAutoScrollEnabled 
-                      ? "bg-green-500" 
-                      : "bg-gray-200"
+                    isAutoScrollEnabled ? "bg-green-500" : "bg-gray-200",
                   )}
                   role="switch"
                   aria-checked={isAutoScrollEnabled}
-                  title={isAutoScrollEnabled ? "Auto-scroll enabled" : "Auto-scroll disabled"}
+                  title={
+                    isAutoScrollEnabled
+                      ? "Auto-scroll enabled"
+                      : "Auto-scroll disabled"
+                  }
                 >
                   <span
                     className={cn(
                       "pointer-events-none inline-block h-4 w-4 sm:h-5 sm:w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
-                      isAutoScrollEnabled 
-                        ? "translate-x-4 sm:translate-x-5" 
-                        : "translate-x-0"
+                      isAutoScrollEnabled
+                        ? "translate-x-4 sm:translate-x-5"
+                        : "translate-x-0",
                     )}
                   />
                 </button>

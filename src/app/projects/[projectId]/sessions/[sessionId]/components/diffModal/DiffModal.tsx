@@ -1,6 +1,12 @@
 "use client";
 
-import { FileText, GitBranch, Loader2, RefreshCcwIcon, Save } from "lucide-react";
+import {
+  FileText,
+  GitBranch,
+  Loader2,
+  RefreshCcwIcon,
+  Save,
+} from "lucide-react";
 import type { FC } from "react";
 import { useCallback, useEffect, useId, useState } from "react";
 import { Button } from "@/components/ui/button";
@@ -23,12 +29,12 @@ import { cn } from "@/lib/utils";
 import { isWorktreeSession } from "@/lib/worktree";
 import {
   useGitBranches,
-  useGitCommits,
   useGitCommit,
+  useGitCommits,
   useGitDiff,
   useSessionGitBranches,
-  useSessionGitCommits,
   useSessionGitCommit,
+  useSessionGitCommits,
   useSessionGitDiff,
 } from "../../hooks/useGit";
 import { useSession } from "../../hooks/useSession";
@@ -150,8 +156,8 @@ export const DiffModal: FC<DiffModalProps> = ({
   // Since we're in a session route, we always have sessionId from route params
   // But the modal prop sessionId might be optional for backward compatibility
   const actualSessionId = sessionId || "";
-  
-  // Always call all hooks unconditionally 
+
+  // Always call all hooks unconditionally
   const sessionData = useSession(projectId, actualSessionId);
   const projectBranches = useGitBranches(projectId);
   const projectCommits = useGitCommits(projectId);
@@ -161,11 +167,15 @@ export const DiffModal: FC<DiffModalProps> = ({
   const sessionCommits = useSessionGitCommits(projectId, actualSessionId);
   const sessionDiff = useSessionGitDiff();
   const sessionCommit = useSessionGitCommit();
-  
+
   // Check if we're in a worktree session
-  const isWorktree = sessionData?.session && isWorktreeSession(sessionData.session.jsonlFilePath);
+  const isWorktree =
+    sessionData?.session &&
+    isWorktreeSession(sessionData.session.jsonlFilePath);
   const isOrphaned = sessionData?.session?.meta?.isOrphaned;
-  const useSessionContext = Boolean(actualSessionId && isWorktree && !isOrphaned);
+  const useSessionContext = Boolean(
+    actualSessionId && isWorktree && !isOrphaned,
+  );
 
   const { data: branchesData, isLoading: isLoadingBranches } = useSessionContext
     ? sessionBranches
@@ -289,7 +299,7 @@ export const DiffModal: FC<DiffModalProps> = ({
       sessionCommit,
       projectCommit,
       loadDiff,
-    ]
+    ],
   );
 
   const handleCommitCancel = () => {
@@ -318,8 +328,8 @@ export const DiffModal: FC<DiffModalProps> = ({
               <div className="text-6xl mb-4">⛓️‍💥</div>
               <h3 className="text-lg font-medium mb-2">Worktree Removed</h3>
               <p className="text-sm max-w-md">
-                The worktree directory for this session has been removed.
-                Git operations are not available for orphaned sessions.
+                The worktree directory for this session has been removed. Git
+                operations are not available for orphaned sessions.
               </p>
             </div>
           </div>
@@ -360,7 +370,7 @@ export const DiffModal: FC<DiffModalProps> = ({
                     <RefreshCcwIcon className="w-4 h-4" />
                   )}
                 </Button>
-                
+
                 {/* Only show save button if we have uncommitted changes (compareTo is "working") */}
                 {compareTo === "working" && (
                   <Button
@@ -376,7 +386,7 @@ export const DiffModal: FC<DiffModalProps> = ({
                     size="icon"
                     title="Commit changes"
                   >
-                    {(sessionCommit.isPending || projectCommit.isPending) ? (
+                    {sessionCommit.isPending || projectCommit.isPending ? (
                       <Loader2 className="w-4 h-4 animate-spin" />
                     ) : (
                       <Save className="w-4 h-4" />
@@ -390,7 +400,10 @@ export const DiffModal: FC<DiffModalProps> = ({
             {showCommitInput && (
               <form onSubmit={handleCommitSubmit} className="space-y-3">
                 <div className="bg-blue-50 dark:bg-blue-900/10 border border-blue-200 dark:border-blue-800 rounded-lg p-4">
-                  <label htmlFor="commit-message" className="text-sm font-medium text-blue-900 dark:text-blue-100 block mb-2">
+                  <label
+                    htmlFor="commit-message"
+                    className="text-sm font-medium text-blue-900 dark:text-blue-100 block mb-2"
+                  >
                     Commit Message
                   </label>
                   <Input
@@ -408,16 +421,22 @@ export const DiffModal: FC<DiffModalProps> = ({
                       onClick={handleCommitCancel}
                       variant="outline"
                       size="sm"
-                      disabled={sessionCommit.isPending || projectCommit.isPending}
+                      disabled={
+                        sessionCommit.isPending || projectCommit.isPending
+                      }
                     >
                       Cancel
                     </Button>
                     <Button
                       type="submit"
                       size="sm"
-                      disabled={!commitMessage.trim() || sessionCommit.isPending || projectCommit.isPending}
+                      disabled={
+                        !commitMessage.trim() ||
+                        sessionCommit.isPending ||
+                        projectCommit.isPending
+                      }
                     >
-                      {(sessionCommit.isPending || projectCommit.isPending) ? (
+                      {sessionCommit.isPending || projectCommit.isPending ? (
                         <>
                           <Loader2 className="w-3 h-3 mr-1 animate-spin" />
                           Committing...
@@ -485,7 +504,10 @@ export const DiffModal: FC<DiffModalProps> = ({
                           },
                           body: JSON.stringify({ filePath }),
                         }).catch((error) => {
-                          console.error("Failed to open file in cursor:", error);
+                          console.error(
+                            "Failed to open file in cursor:",
+                            error,
+                          );
                         });
                       }}
                     />
